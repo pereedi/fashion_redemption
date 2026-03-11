@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Playfair Display', serif;
+}
+
+body {
+  @apply bg-white text-black;
+}
+
+.luxury-underline {
+  @apply relative after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-luxury-red after:transition-all hover:after:w-full;
+}
+
+.shadow-soft {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
