@@ -1,16 +1,19 @@
+import React, { useState } from 'react';
 import { Search, Heart, User, ShoppingBag, UserCheck } from 'lucide-react';
 import { NavLink, Link } from 'react-router-dom';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import SearchModal from '../ui/SearchModal';
 
 const Navbar: React.FC = () => {
     const { totalItems: wishlistTotal } = useWishlist();
     const { setIsCartOpen, totalItems: cartTotal } = useCart();
     const { isAuthenticated } = useAuth();
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const navLinks = [
-        { name: 'MEN', href: '/collections' },
-        { name: 'WOMEN', href: '/collections' },
+        { name: 'MEN', href: '/men' },
+        { name: 'WOMEN', href: '/women' },
         { name: 'ACCESSORIES', href: '/collections' },
         { name: 'COLLECTIONS', href: '/collections' },
     ];
@@ -44,7 +47,10 @@ const Navbar: React.FC = () => {
 
                 {/* Right Side: Icons */}
                 <div className="flex items-center gap-5">
-                    <button className="hover:text-luxury-red transition-colors">
+                    <button 
+                        className="hover:text-luxury-red transition-colors"
+                        onClick={() => setIsSearchOpen(true)}
+                    >
                         <Search size={20} strokeWidth={1.5} />
                     </button>
                     <Link to="/wishlist" className="hover:text-luxury-red transition-colors relative">
@@ -74,6 +80,7 @@ const Navbar: React.FC = () => {
                     </button>
                 </div>
             </div>
+            <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
         </nav>
     );
 };

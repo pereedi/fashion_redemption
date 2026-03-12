@@ -7,6 +7,8 @@ import ProductDetailsPage from './pages/ProductDetailsPage.tsx';
 import CheckoutPage from './pages/CheckoutPage.tsx';
 import LoginPage from './pages/LoginPage.tsx';
 import SignupPage from './pages/SignupPage.tsx';
+import CategoryPage from './pages/CategoryPage.tsx';
+import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
 import OrderConfirmationPage from './pages/OrderConfirmationPage.tsx';
 import { WishlistProvider } from './context/WishlistContext';
@@ -31,6 +33,9 @@ function App() {
                   <Route path="/product/:id" element={<ProductDetailsPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/men" element={<CategoryPage gender="men" />} />
+                  <Route path="/women" element={<CategoryPage gender="women" />} />
+                  <Route path="/search" element={<SearchResultsPage />} />
                   <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
                   <Route 
                     path="/checkout" 

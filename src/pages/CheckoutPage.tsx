@@ -9,7 +9,7 @@ import CardForm from '../components/checkout/CardForm';
 import OrderSummary from '../components/checkout/OrderSummary';
 import { useCart } from '../context/CartContext';
 import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+
 
 type CheckoutStep = 'cart' | 'information' | 'shipping' | 'payment';
 
@@ -228,7 +228,7 @@ const CheckoutPage: React.FC = () => {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 };

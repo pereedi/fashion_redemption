@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -114,7 +114,7 @@ const LoginPage: React.FC = () => {
         </motion.div>
       </main>
 
-      <Footer />
+
     </div>
   );
 };

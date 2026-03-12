@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+
 
 const SignupPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -148,7 +148,7 @@ const SignupPage: React.FC = () => {
         </motion.div>
       </main>
 
-      <Footer />
+
     </div>
   );
 };

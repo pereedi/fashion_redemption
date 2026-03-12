@@ -13,7 +13,9 @@ const productSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   price: { type: String, required: true },
-  category: { type: String, required: true },
+  category: { type: String, required: true }, // "men" | "women"
+  type: { type: String, required: true }, // "clothing" | "accessories" | "shoes"
+  colors: [{ type: String }],
   rating: { type: Number, required: true, default: 0 },
   reviewCount: { type: Number, required: true, default: 0 },
   description: { type: String, required: true },
@@ -29,5 +31,7 @@ const productSchema = new mongoose.Schema({
     image: String
   }]
 }, { timestamps: true });
+
+productSchema.index({ name: 'text', category: 'text', type: 'text', description: 'text' });
 
 export default mongoose.model('Product', productSchema);

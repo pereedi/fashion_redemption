@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import Button from '../components/ui/Button';
+import { Link } from 'react-router-dom';
 
 const AestheticSection: React.FC = () => {
     return (
@@ -57,10 +58,11 @@ const AestheticSection: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-
+                        <Link to="/">
                         <Button variant="outline">
                             SHOP THE LOOK
                         </Button>
+                        </Link>
                     </motion.div>
                 </div>
             </div>

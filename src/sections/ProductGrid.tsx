@@ -2,51 +2,55 @@ import React from 'react';
 import ProductCard from '../components/ui/ProductCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const ProductGrid: React.FC = () => {
-    const products = [
-        {
-            id: 1,
-            name: "Crimson Silk Gala Gown",
-            price: "$890.00",
-            category: "REDEMPTION STUDIO",
-            image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=800",
-        },
-        {
-            id: 2,
-            name: "Sculpted Minimalist Blazer",
-            price: "$1,250.00",
-            category: "ELYSIAN",
-            image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80&w=800",
-        },
-        {
-            id: 3,
-            name: "Asymmetric Mesh Top",
-            price: "$420.00",
-            category: "REDEMPTION STUDIO",
-            image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=800",
-        },
-        {
-            id: 4,
-            name: "Cobalt Leather Stiletto",
-            price: "$675.00",
-            category: "AURA LABEL",
-            image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&q=80&w=800",
-        },
-        {
-            id: 5,
-            name: "Onyx Evening Slit Dress",
-            price: "$980.00",
-            category: "REDEMPTION STUDIO",
-            image: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&q=80&w=800",
-        },
-        {
-            id: 6,
-            name: "Architectural Cloud Dress",
-            price: "$1,450.00",
-            category: "ELYSIAN",
-            image: "https://images.unsplash.com/photo-1539109132314-347596ad9cf2?auto=format&fit=crop&q=80&w=800",
-        }
-    ];
+interface ProductGridProps {
+    category?: string;
+    filters?: any;
+    onPageChange?: (page: number) => void;
+}
+
+const ProductGrid: React.FC<ProductGridProps> = ({ category, filters, onPageChange }) => {
+    const [products, setProducts] = React.useState<any[]>([]);
+    const [pagination, setPagination] = React.useState<any>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchProducts = async () => {
+            setIsLoading(true);
+            try {
+                const params = new URLSearchParams({
+                    ...(category && { category }),
+                    ...filters
+                });
+                const response = await fetch(`http://localhost:5000/api/products?${params}`);
+                const data = await response.json();
+                setProducts(data.products || []);
+                setPagination(data);
+            } catch (err) {
+                console.error('Failed to fetch products:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProducts();
+    }, [category, filters]);
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-32 gap-4">
+                <div className="w-8 h-8 border-2 border-luxury-red border-t-transparent rounded-full animate-spin" />
+                <span className="text-[10px] font-bold tracking-widest uppercase text-black/40">Fetching Collection...</span>
+            </div>
+        );
+    }
+
+    if (products.length === 0) {
+        return (
+            <div className="py-32 text-center border border-dashed border-black/10 rounded-sm">
+                <p className="text-[10px] font-bold tracking-widest text-black/30 uppercase">No products found matching your filters</p>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-12">
@@ -55,23 +59,46 @@ const ProductGrid: React.FC = () => {
                     <ProductCard
                         key={product.id}
                         {...product}
+                        image={product.images[0]}
                         className="shadow-none border border-light-gray/50 hover:border-transparent"
                     />
                 ))}
             </div>
 
             {/* Pagination */}
-            <div className="flex justify-center items-center gap-2 pt-10 border-t border-light-gray/50">
-                <button className="p-2 border border-light-gray hover:border-black transition-colors text-black/40 hover:text-black">
-                    <ChevronLeft size={16} />
-                </button>
-                <button className="w-10 h-10 flex items-center justify-center bg-luxury-red text-white text-xs font-bold">1</button>
-                <button className="w-10 h-10 flex items-center justify-center bg-white border border-light-gray text-black/60 text-xs font-bold hover:border-black transition-colors">2</button>
-                <button className="w-10 h-10 flex items-center justify-center bg-white border border-light-gray text-black/60 text-xs font-bold hover:border-black transition-colors">3</button>
-                <button className="p-2 border border-light-gray hover:border-black transition-colors text-black/40 hover:text-black">
-                    <ChevronRight size={16} />
-                </button>
-            </div>
+            {pagination && pagination.pages > 1 && (
+                <div className="flex justify-center items-center gap-2 pt-10 border-t border-light-gray/50">
+                    <button 
+                        onClick={() => onPageChange?.(pagination.currentPage - 1)}
+                        disabled={pagination.currentPage === 1}
+                        className="p-2 border border-light-gray hover:border-black transition-colors text-black/40 hover:text-black disabled:opacity-20"
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
+                    
+                    {[...Array(pagination.pages)].map((_, i) => (
+                        <button
+                            key={i + 1}
+                            onClick={() => onPageChange?.(i + 1)}
+                            className={`w-10 h-10 flex items-center justify-center text-xs font-bold transition-all ${
+                                pagination.currentPage === i + 1
+                                    ? 'bg-luxury-red text-white'
+                                    : 'bg-white border border-light-gray text-black/60 hover:border-black'
+                            }`}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+
+                    <button 
+                        onClick={() => onPageChange?.(pagination.currentPage + 1)}
+                        disabled={pagination.currentPage === pagination.pages}
+                        className="p-2 border border-light-gray hover:border-black transition-colors text-black/40 hover:text-black disabled:opacity-20"
+                    >
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

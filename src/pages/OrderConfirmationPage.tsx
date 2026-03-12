@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { CheckCircle, ArrowRight, ShoppingBag } from 'lucide-react';
 import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+
 
 const OrderConfirmationPage: React.FC = () => {
   return (
@@ -48,7 +48,7 @@ const OrderConfirmationPage: React.FC = () => {
         </motion.div>
       </main>
 
-      <Footer />
+
     </div>
   );
 };

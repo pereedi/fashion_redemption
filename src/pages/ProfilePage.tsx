@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+
 import ProfileSidebar from '../components/profile/ProfileSidebar';
 import OrderHistory from '../components/profile/OrderHistory';
 import WishlistGrid from '../components/profile/WishlistGrid';
@@ -132,7 +132,7 @@ const ProfilePage: React.FC = () => {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 };

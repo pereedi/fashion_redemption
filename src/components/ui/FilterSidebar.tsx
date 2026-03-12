@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { Check } from 'lucide-react';
 import Button from './Button';
 
-const FilterSidebar: React.FC = () => {
+interface FilterSidebarProps {
+    onFilterChange?: (filters: any) => void;
+}
+
+const FilterSidebar: React.FC<FilterSidebarProps> = ({ onFilterChange }) => {
     const [selectedSize, setSelectedSize] = useState('S');
     const [selectedColor, setSelectedColor] = useState('Red');
 
@@ -35,7 +39,11 @@ const FilterSidebar: React.FC = () => {
                 <h3 className="text-xs font-bold tracking-widest uppercase mb-6 pb-2 border-b border-light-gray">CATEGORY</h3>
                 <ul className="space-y-4">
                     {categories.map((cat) => (
-                        <li key={cat.name} className="flex items-center gap-3 group cursor-pointer">
+                        <li 
+                            key={cat.name} 
+                            className="flex items-center gap-3 group cursor-pointer"
+                            onClick={() => onFilterChange?.({ type: cat.name.toLowerCase() })}
+                        >
                             <div className={`w-4 h-4 border ${cat.checked ? 'bg-luxury-red border-luxury-red' : 'border-black/20 group-hover:border-black'} flex items-center justify-center transition-all`}>
                                 {cat.checked && <Check size={10} className="text-white" strokeWidth={3} />}
                             </div>
@@ -54,7 +62,10 @@ const FilterSidebar: React.FC = () => {
                     {sizes.map((size) => (
                         <button
                             key={size}
-                            onClick={() => setSelectedSize(size)}
+                            onClick={() => {
+                                setSelectedSize(size);
+                                onFilterChange?.({ size });
+                            }}
                             className={`py-2 text-[10px] font-bold tracking-widest border transition-all ${selectedSize === size
                                     ? 'bg-luxury-red border-luxury-red text-white'
                                     : 'bg-white border-light-gray text-black/60 hover:border-black'
@@ -73,7 +84,10 @@ const FilterSidebar: React.FC = () => {
                     {colors.map((color) => (
                         <button
                             key={color.name}
-                            onClick={() => setSelectedColor(color.name)}
+                            onClick={() => {
+                                setSelectedColor(color.name);
+                                onFilterChange?.({ color: color.name });
+                            }}
                             className={`w-8 h-8 rounded-full border border-black/10 flex items-center justify-center relative transition-all ${selectedColor === color.name ? 'ring-2 ring-luxury-red ring-offset-2 scale-110' : 'hover:scale-105'
                                 }`}
                             style={{ backgroundColor: color.hex }}
@@ -105,7 +119,11 @@ const FilterSidebar: React.FC = () => {
                 <h3 className="text-xs font-bold tracking-widest uppercase mb-6 pb-2 border-b border-light-gray">BRAND</h3>
                 <ul className="space-y-4">
                     {brands.map((brand) => (
-                        <li key={brand.name} className="flex items-center gap-3 group cursor-pointer">
+                        <li 
+                            key={brand.name} 
+                            className="flex items-center gap-3 group cursor-pointer"
+                            onClick={() => onFilterChange?.({ brand: brand.name })}
+                        >
                             <div className={`w-4 h-4 border ${brand.checked ? 'bg-luxury-red border-luxury-red' : 'border-black/20 group-hover:border-black'} flex items-center justify-center transition-all`}>
                                 {brand.checked && <Check size={10} className="text-white" strokeWidth={3} />}
                             </div>
@@ -117,7 +135,11 @@ const FilterSidebar: React.FC = () => {
                 </ul>
             </div>
 
-            <Button variant="primary" className="w-full !rounded-none mt-4 !py-4 font-bold tracking-[0.3em] text-[10px]">
+            <Button 
+                variant="primary" 
+                className="w-full !rounded-none mt-4 !py-4 font-bold tracking-[0.3em] text-[10px]"
+                onClick={() => onFilterChange?.({ type: '', size: '', color: '', brand: '' })}
+            >
                 CLEAR ALL FILTERS
             </Button>
         </div>

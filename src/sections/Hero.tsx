@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 
 const Hero: React.FC = () => {
@@ -54,9 +55,11 @@ const Hero: React.FC = () => {
                         EXQUISITE CRAFTSMANSHIP MEETS <br />
                         MODERN REBELLION.
                     </p>
-                    <Button variant="primary" className="px-12 py-4 text-base">
-                        SHOP NOW
-                    </Button>
+                    <Link to="/collections">
+                        <Button variant="primary" className="px-12 py-4 text-base">
+                            SHOP NOW
+                        </Button>
+                    </Link>
                 </motion.div>
             </div>
 
