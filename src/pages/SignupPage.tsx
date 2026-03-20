@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/layout/Navbar';
+import logo from '../assets/logo.png';
 
 
 const SignupPage: React.FC = () => {
@@ -51,7 +52,7 @@ const SignupPage: React.FC = () => {
       if (!response.ok) throw new Error(data.message || 'Registration failed');
 
       login(data.data.user, data.token);
-      navigate('/collections');
+      navigate('/sales');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -69,6 +70,13 @@ const SignupPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md space-y-12"
         >
+          <div className="flex justify-center mb-8">
+            <img 
+              src={logo} 
+              alt="Fashion Redemption" 
+              className="h-24 w-auto object-contain"
+            />
+          </div>
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-serif uppercase tracking-tighter">Join the Redemption</h1>
             <p className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase">Create an account for a seamless luxury experience</p>

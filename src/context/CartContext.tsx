@@ -4,6 +4,7 @@ export interface CartItem {
   id: string | number;
   name: string;
   price: string;
+  basePrice: number;
   image: string;
   size: string;
   quantity: number;
@@ -65,8 +66,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const totalSubtotal = cartItems.reduce((acc, item) => {
-    const priceNum = parseFloat(item.price.replace(/[^0-9.]/g, ''));
-    return acc + (priceNum * item.quantity);
+    const priceNum = item.basePrice || (typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.]/g, '')) : 0);
+    return acc + (isNaN(priceNum) ? 0 : priceNum * item.quantity);
   }, 0);
 
   const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);

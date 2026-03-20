@@ -9,13 +9,16 @@ import ProductGrid from '../sections/ProductGrid';
 import Newsletter from '../sections/Newsletter';
 
 interface CategoryPageProps {
-    gender?: 'men' | 'women';
+    gender?: 'men' | 'women' | 'kids';
 }
 
 const CategoryPage: React.FC<CategoryPageProps> = ({ gender: propGender }) => {
     const { gender: paramGender } = useParams<{ gender: string }>();
-    const gender = propGender || (paramGender as 'men' | 'women');
-    const categoryTitle = gender?.toUpperCase() === 'MEN' ? 'MEN COLLECTION' : 'WOMEN COLLECTION';
+    const gender = propGender || (paramGender as 'men' | 'women' | 'kids');
+    const categoryTitle = 
+        gender?.toUpperCase() === 'MEN' ? 'MEN COLLECTION' : 
+        gender?.toUpperCase() === 'WOMEN' ? 'WOMEN COLLECTION' : 
+        'KIDS COLLECTION';
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [filters, setFilters] = useState({
         type: '',

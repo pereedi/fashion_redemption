@@ -34,7 +34,8 @@ const ProfilePage: React.FC = () => {
         // Fetch Wishlist Products
         const productsRes = await fetch('http://localhost:5000/api/products');
         if (productsRes.ok) {
-          const allProducts = await productsRes.json();
+          const data = await productsRes.json();
+          const allProducts = data.products || [];
           const filtered = allProducts.filter((p: any) => wishlistItems.includes(String(p.id)));
           setWishlistProducts(filtered);
         }

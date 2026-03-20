@@ -41,7 +41,7 @@ const ProductDetailsPage: React.FC = () => {
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center font-serif uppercase tracking-[0.3em] gap-4">
       <div className="w-10 h-10 border-2 border-luxury-red border-t-transparent rounded-full animate-spin" />
-      <span>Loading Collection...</span>
+      <span>Loading...</span>
     </div>
   );
 
@@ -49,13 +49,13 @@ const ProductDetailsPage: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center justify-center font-serif text-center px-4">
       <h2 className="text-4xl uppercase mb-6">Product Not Found</h2>
       <p className="text-black/60 text-sm max-w-md mb-8 leading-relaxed">
-        The piece you're looking for might have been moved or is no longer part of our current collection.
+        The piece you're looking for might have been moved or is no longer part of our current selection.
       </p>
       <button 
-        onClick={() => window.location.href='/collections'}
+        onClick={() => window.location.href='/sales'}
         className="px-12 py-4 bg-luxury-red text-white text-[10px] font-bold tracking-[0.3em] uppercase hover:bg-black transition-all"
       >
-        BACK TO COLLECTIONS
+        BACK TO SALES
       </button>
     </div>
   );
@@ -73,7 +73,10 @@ const ProductDetailsPage: React.FC = () => {
 
           {/* Info - 40% */}
           <div className="w-full lg:w-[35%]">
-            <ProductInfo product={product} />
+            <ProductInfo product={{
+              ...product,
+              basePrice: product.base_price
+            }} />
           </div>
         </div>
 

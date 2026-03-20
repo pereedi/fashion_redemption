@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import UserRepository from '../repositories/UserRepository.js';
 
 export const protect = async (req, res, next) => {
   try {
@@ -14,7 +14,7 @@ export const protect = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'redemption-secret');
 
-    const currentUser = await User.findById(decoded.id);
+    const currentUser = await UserRepository.findById(decoded.id);
     if (!currentUser) {
       return res.status(401).json({ message: 'User no longer exists' });
     }
@@ -23,5 +23,13 @@ export const protect = async (req, res, next) => {
     next();
   } catch (err) {
     res.status(401).json({ message: 'Invalid token' });
+  }
+};
+
+export const admin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Not authorized as an admin' });
   }
 };

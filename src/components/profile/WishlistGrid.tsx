@@ -14,6 +14,7 @@ const WishlistGrid: React.FC<WishlistGridProps> = ({ products }) => {
           id={product.id}
           name={product.name}
           price={product.price}
+          basePrice={product.base_price || product.basePrice}
           image={product.images?.[0] || product.image}
           category={product.category}
         />

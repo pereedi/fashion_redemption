@@ -43,7 +43,7 @@ const ShippingMethodSelector: React.FC<ShippingMethodSelectorProps> = ({ methods
               </div>
             </div>
             <span className="text-[13px] font-serif font-bold text-luxury-red">
-              {method.price === 0 ? 'FREE' : `$${method.price.toFixed(2)}`}
+              {method.price === 0 ? 'FREE' : `Esp ${method.price.toFixed(2)}`}
             </span>
           </motion.div>
         ))}

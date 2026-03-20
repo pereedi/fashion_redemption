@@ -5,28 +5,30 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import SearchModal from '../ui/SearchModal';
-
+import logo from '../../assets/logo.png';
 const Navbar: React.FC = () => {
     const { totalItems: wishlistTotal } = useWishlist();
     const { setIsCartOpen, totalItems: cartTotal } = useCart();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const navLinks = [
         { name: 'MEN', href: '/men' },
         { name: 'WOMEN', href: '/women' },
-        { name: 'ACCESSORIES', href: '/collections' },
-        { name: 'COLLECTIONS', href: '/collections' },
+        { name: 'KIDS', href: '/kids' },
+        { name: 'NEW ARRIVALS', href: '/new-arrivals' },
+        { name: 'SALES', href: '/sales' },
     ];
 
     return (
         <nav className="sticky top-0 z-50 w-full bg-white border-b border-light-gray">
             <div className="container mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
                 {/* Left Side: Logo */}
-                <Link to="/" className="flex items-center gap-2">
-                    <div className="w-5 h-5 bg-luxury-red rounded-sm rotate-45" />
-                    <span className="font-serif text-xl font-bold tracking-tighter">
-                        FASHION <span className="text-luxury-red">REDEMPTION</span>
-                    </span>
+                <Link to="/" className="flex items-center">
+                    <img 
+                        src={logo}
+                        alt="Fashion Redemption" 
+                        className="h-24 w-auto object-contain"
+                    />
                 </Link>
 
                 {/* Center: Menu */}
@@ -62,7 +64,7 @@ const Navbar: React.FC = () => {
                         )}
                     </Link>
                     <Link 
-                        to={isAuthenticated ? "/profile" : "/login"} 
+                        to={isAuthenticated ? (user?.role === 'admin' ? '/admin' : '/profile') : '/login'} 
                         className={`hover:text-luxury-red transition-colors ${isAuthenticated ? 'text-luxury-red' : ''}`}
                     >
                         {isAuthenticated ? <UserCheck size={20} strokeWidth={2} /> : <User size={20} strokeWidth={1.5} />}

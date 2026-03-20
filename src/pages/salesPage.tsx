@@ -4,21 +4,28 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Breadcrumbs from '../components/ui/Breadcrumbs.tsx';
 import FilterSidebar from '../components/ui/FilterSidebar.tsx';
 import ProductGrid from '../sections/ProductGrid.tsx';
-import Newsletter from '../sections/Newsletter';
-import CollectionsNavbar from '../components/layout/CollectionsNavbar';
+import Newsletter from '../sections/Newsletter.tsx';
+import CollectionsNavbar from '../components/layout/CollectionsNavbar.tsx';
+import SaleBanner from '../sections/SaleBanner.tsx';
 
-const CollectionsPage: React.FC = () => {
+interface CollectionsPageProps {
+    filter?: string;
+}
+
+const CollectionsPage: React.FC<CollectionsPageProps> = ({ filter }) => {
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
     return (
         <div className="bg-white min-h-screen">
             <CollectionsNavbar />
+            {filter === 'sale' && <SaleBanner />}
             <div className="container mx-auto px-4 md:px-8 py-8">
-                {/* Header Section */}
-                <Breadcrumbs items={[{ label: 'HOME', href: '/' }, { label: 'SHOP ALL COLLECTIONS' }]} />
+                <Breadcrumbs items={[{ label: 'HOME', href: '/' }, { label: filter ? filter.toUpperCase().replace('-', ' ') : 'SHOP ALL COLLECTIONS' }]} />
 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mt-6 mb-12 gap-4">
-                    <h1 className="text-4xl md:text-5xl font-serif tracking-tight uppercase">ALL COLLECTIONS</h1>
+                    <h1 className="text-4xl md:text-5xl font-serif tracking-tight uppercase">
+                        {filter === 'new' ? 'NEW ARRIVALS' : filter === 'sale' ? 'SEASONAL SALE' : 'ALL COLLECTIONS'}
+                    </h1>
 
                     <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end border-b md:border-none pb-4 md:pb-0">
                         <button
@@ -48,7 +55,7 @@ const CollectionsPage: React.FC = () => {
 
                     {/* Main Content */}
                     <main className="flex-grow">
-                        <ProductGrid />
+                        <ProductGrid filters={filter ? { filter } : {}} />
                     </main>
                 </div>
             </div>

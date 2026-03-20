@@ -9,11 +9,12 @@ interface ProductCardProps {
     image: string;
     name: string;
     price: string;
+    basePrice: number;
     category?: string;
     className?: string;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ id, image, name, price, category, className = '' }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ id, image, name, price, basePrice, category, className = '' }) => {
     const { toggleWishlist, isInWishlist } = useWishlist();
     const { addToCart } = useCart();
     const isWishlisted = isInWishlist(String(id));
@@ -31,6 +32,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ id, image, name, price, categ
             id,
             name,
             price,
+            basePrice,
             image,
             size: 'S', // Default size for quick add
             quantity: 1

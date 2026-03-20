@@ -9,6 +9,7 @@ interface RelatedProduct {
     price: string;
     category: string;
     image: string;
+    basePrice?: number;
 }
 
 interface CompleteTheLookProps {
@@ -23,6 +24,7 @@ const CompleteTheLook: React.FC<CompleteTheLookProps> = ({ products }) => {
             id: product.id,
             name: product.name,
             price: product.price,
+            basePrice: product.basePrice || Number(product.price?.replace(/[^0-9.]/g, '')),
             image: product.image,
             size: 'S', // Default size
             quantity: 1
@@ -48,6 +50,7 @@ const CompleteTheLook: React.FC<CompleteTheLookProps> = ({ products }) => {
                     <div key={product.id} className="min-w-[280px] snap-start relative group">
                         <ProductCard
                             {...product}
+                            basePrice={product.basePrice || Number(product.price?.replace(/[^0-9.]/g, ''))}
                             className="shadow-none border border-transparent group-hover:border-light-gray"
                         />
                         {/* Overlay Add to cart button as seen in design */}

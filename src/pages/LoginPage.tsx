@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/layout/Navbar';
+import logo from '../assets/logo.png';
 
 
 const LoginPage: React.FC = () => {
@@ -34,7 +35,11 @@ const LoginPage: React.FC = () => {
 
       login(data.data.user, data.token);
       
-      const origin = location.state?.from?.pathname || '/collections';
+      let origin = location.state?.from?.pathname || '/sales';
+      if (data.data.user.role === 'admin') {
+        origin = '/admin';
+      }
+      
       navigate(origin);
     } catch (err: any) {
       setError(err.message);
@@ -53,6 +58,13 @@ const LoginPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md space-y-12"
         >
+          <div className="flex justify-center mb-8">
+            <img 
+              src={logo} 
+              alt="Fashion Redemption" 
+              className="h-24 w-auto object-contain"
+            />
+          </div>
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-serif uppercase tracking-tighter">
               {fromCheckout ? 'Complete Your Order' : 'Welcome Back'}

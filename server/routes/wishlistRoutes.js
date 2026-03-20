@@ -1,5 +1,5 @@
 import express from 'express';
-import User from '../models/User.js';
+import UserRepository from '../repositories/UserRepository.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -19,15 +19,15 @@ router.post('/toggle', protect, async (req, res) => {
     const { productId } = req.body;
     const user = req.user;
 
-    const index = user.wishlist.indexOf(productId);
-    if (index > -1) {
-      user.wishlist.splice(index, 1);
+    const hasProduct = user.wishlist.includes(productId);
+    if (hasProduct) {
+      await UserRepository.removeFromWishlist(user.id, productId);
     } else {
-      user.wishlist.push(productId);
+      await UserRepository.addToWishlist(user.id, productId);
     }
 
-    await user.save();
-    res.json(user.wishlist);
+    const updatedUser = await UserRepository.findById(user.id);
+    res.json(updatedUser.wishlist);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -39,12 +39,12 @@ router.post('/sync', protect, async (req, res) => {
     const { guestWishlist } = req.body; // Array of product IDs
     const user = req.user;
 
-    // Merge guest wishlist with user wishlist, removing duplicates
-    const combined = [...new Set([...user.wishlist, ...guestWishlist])];
-    user.wishlist = combined;
+    for (const pid of guestWishlist) {
+      await UserRepository.addToWishlist(user.id, pid);
+    }
 
-    await user.save();
-    res.json(user.wishlist);
+    const updatedUser = await UserRepository.findById(user.id);
+    res.json(updatedUser.wishlist);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

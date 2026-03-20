@@ -15,10 +15,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ onComplete, shippingCost, t
   const { cartItems, totalSubtotal } = useCart();
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+    return `Esp ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (

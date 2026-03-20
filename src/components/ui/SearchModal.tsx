@@ -193,7 +193,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                                                 variant="outline" 
                                                 onClick={() => {
                                                     onClose();
-                                                    navigate('/collections');
+                                                    navigate('/sales');
                                                 }}
                                                 className="!py-2"
                                             >

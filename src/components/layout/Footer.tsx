@@ -1,4 +1,5 @@
 import React from 'react';
+import logo from "../../assets/logo.png";
 import { Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
 
 const Footer: React.FC = () => {
@@ -8,11 +9,12 @@ const Footer: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
                     {/* Brand Info */}
                     <div>
-                        <div className="flex items-center gap-2 mb-6">
-                            <div className="w-4 h-4 bg-luxury-red rounded-sm rotate-45" />
-                            <span className="font-serif text-lg font-bold tracking-tighter uppercase">
-                                FASHION <span className="text-luxury-red">REDEMPTION</span>
-                            </span>
+                        <div className="mb-6">
+                            <img 
+                                src= {logo} 
+                                alt="Fashion Redemption" 
+                                className="h-24 w-auto object-contain -ml-2"
+                            />
                         </div>
                         <p className="text-black/50 text-sm leading-relaxed mb-8 max-w-xs">
                             The destination for those who seek to redefine standard by through high-fashion expressions.
@@ -36,11 +38,12 @@ const Footer: React.FC = () => {
                     {/* Navigation */}
                     <div>
                         <h4 className="font-bold text-xs tracking-widest uppercase mb-8">NAVIGATION</h4>
-                        <ul className="space-y-4 text-sm text-black/60">
-                            <li><a href="#" className="hover:text-luxury-red transition-colors">Mens Editorial</a></li>
-                            <li><a href="#" className="hover:text-luxury-red transition-colors">Womens Collection</a></li>
-                            <li><a href="#" className="hover:text-luxury-red transition-colors">Accessories</a></li>
-                            <li><a href="#" className="hover:text-luxury-red transition-colors">New Drops</a></li>
+                        <ul className="space-y-4 text-sm font-medium text-black/60">
+                            <li><a href="/women" className="hover:text-luxury-red transition-colors">Women</a></li>
+                            <li><a href="/men" className="hover:text-luxury-red transition-colors">Men</a></li>
+                            <li><a href="/kids" className="hover:text-luxury-red transition-colors">Kids</a></li>
+                            <li><a href="/new-arrivals" className="hover:text-luxury-red transition-colors">New Arrivals</a></li>
+                            <li><a href="/sales" className="hover:text-luxury-red transition-colors">Sales</a></li>
                         </ul>
                     </div>
 

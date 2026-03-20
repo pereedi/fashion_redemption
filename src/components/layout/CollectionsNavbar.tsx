@@ -3,27 +3,29 @@ import { NavLink, Link } from 'react-router-dom';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import logo from '../../assets/logo.png';
 
 const CollectionsNavbar: React.FC = () => {
     const { totalItems: wishlistTotal } = useWishlist();
     const { setIsCartOpen, totalItems: cartTotal } = useCart();
     const { isAuthenticated } = useAuth();
     const navLinks = [
-        { name: 'DRESSES', href: '/collections/dresses' },
-        { name: 'TOPS', href: '/collections/tops' },
-        { name: 'BAGS', href: '/collections/bags' },
-        { name: 'SHOES', href: '/collections/shoes' },
+        { name: 'DRESSES', href: '/sales/dresses' },
+        { name: 'TOPS', href: '/sales/tops' },
+        { name: 'BAGS', href: '/sales/bags' },
+        { name: 'SHOES', href: '/sales/shoes' },
     ];
 
     return (
         <nav className="sticky top-0 z-50 w-full bg-white border-b border-light-gray">
             <div className="container mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
                 {/* Left Side: Logo */}
-                <Link to="/" className="flex items-center gap-2">
-                    <div className="w-5 h-5 bg-luxury-red rounded-sm rotate-45" />
-                    <span className="font-serif text-xl font-bold tracking-tighter">
-                        FASHION <span className="text-luxury-red">REDEMPTION</span>
-                    </span>
+                <Link to="/" className="flex items-center">
+                    <img 
+                        src={logo}
+                        alt="Fashion Redemption" 
+                        className="h-24 w-auto object-contain"
+                    />
                 </Link>
 
                 {/* Center: Menu */}

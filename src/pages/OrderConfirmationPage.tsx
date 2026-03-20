@@ -38,7 +38,7 @@ const OrderConfirmationPage: React.FC = () => {
               View Orders
             </Link>
             <Link 
-              to="/collections" 
+              to="/sales" 
               className="flex items-center justify-center gap-3 px-8 py-4 bg-black text-white text-[10px] font-bold tracking-widest uppercase hover:bg-luxury-red transition-all duration-500"
             >
               Continue Shopping

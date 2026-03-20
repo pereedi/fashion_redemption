@@ -58,8 +58,12 @@ const ProductGrid: React.FC<ProductGridProps> = ({ category, filters, onPageChan
                 {products.map((product) => (
                     <ProductCard
                         key={product.id}
-                        {...product}
-                        image={product.images[0]}
+                        id={product.id}
+                        name={product.name}
+                        price={`Esp ${Number(product.base_price).toLocaleString()}`}
+                        basePrice={product.base_price}
+                        image={product.images?.[0] || 'https://via.placeholder.com/400x500'}
+                        category={product.category}
                         className="shadow-none border border-light-gray/50 hover:border-transparent"
                     />
                 ))}

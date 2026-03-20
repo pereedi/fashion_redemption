@@ -16,7 +16,8 @@ const WishlistPage: React.FC = () => {
         const fetchWishlistProducts = async () => {
             try {
                 const response = await fetch('http://localhost:5000/api/products');
-                const allProducts = await response.json();
+                const data = await response.json();
+                const allProducts = data.products || [];
                 // Filter products that are in the wishlistItems array
                 const filtered = allProducts.filter((p: any) => wishlistItems.includes(String(p.id)));
                 setProducts(filtered);
@@ -63,7 +64,7 @@ const WishlistPage: React.FC = () => {
                         <p className="text-black/60 text-sm max-w-xs mb-10 leading-relaxed font-medium">
                             Explore our collections and save your favorite pieces to find them easily later.
                         </p>
-                        <Button variant="primary" className="!px-12 !py-4" onClick={() => window.location.href = '/collections'}>
+                        <Button variant="primary" className="!px-12 !py-4" onClick={() => window.location.href = '/sales'}>
                             START SHOPPING
                         </Button>
                     </div>

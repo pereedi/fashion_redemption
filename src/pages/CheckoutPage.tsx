@@ -108,7 +108,7 @@ const CheckoutPage: React.FC = () => {
     return (
       <div className="min-h-screen pt-32 pb-20 flex flex-col items-center justify-center">
         <h2 className="text-xl font-serif uppercase tracking-widest text-black/40">Your bag is empty</h2>
-        <a href="/collections" className="mt-8 px-12 py-5 bg-black text-white text-[10px] font-bold tracking-[0.4em] uppercase hover:bg-luxury-red transition-all duration-500">
+        <a href="/sales" className="mt-8 px-12 py-5 bg-black text-white text-[10px] font-bold tracking-[0.4em] uppercase hover:bg-luxury-red transition-all duration-500">
           CONTINUE SHOPPING
         </a>
       </div>

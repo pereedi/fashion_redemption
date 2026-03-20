@@ -1,5 +1,5 @@
 import express from 'express';
-import Product from '../models/Product.js';
+import ProductRepository from '../repositories/ProductRepository.js';
 
 const router = express.Router();
 
@@ -11,13 +11,8 @@ router.get('/search', async (req, res) => {
       return res.json([]);
     }
 
-    const products = await Product.find(
-      { $text: { $search: q } },
-      { score: { $meta: "textScore" } }
-    )
-    .sort({ score: { $meta: "textScore" } })
-    .limit(10);
 
+    const { products } = await ProductRepository.getAll({ q });
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -27,33 +22,23 @@ router.get('/search', async (req, res) => {
 // GET all products with filtering, sorting, and pagination
 router.get('/', async (req, res) => {
   try {
-    const { category, type, size, color, sort, q, page = 1, limit = 12 } = req.query;
+    const { category, type, sort, q, page = 1, limit = 12, filter } = req.query;
     
-    const query = {};
-    if (category) query.category = category;
-    if (type) query.type = type;
-    if (size) query.sizes = size;
-    if (color) query.colors = color;
-    if (q) query.$text = { $search: q };
-
-    let sortOption = { createdAt: -1 };
-    if (sort === 'price_asc') sortOption = { price: 1 };
-    if (sort === 'price_desc') sortOption = { price: -1 };
-    if (sort === 'popular') sortOption = { rating: -1 };
-
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    const products = await Product.find(query)
-      .sort(sortOption)
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const total = await Product.countDocuments(query);
+    // Using ProductRepository for centralized logic
+    const { products, total } = await ProductRepository.getAll({
+        category, 
+        type, 
+        q, 
+        sort, 
+        page: parseInt(page), 
+        limit: parseInt(limit),
+        filter
+    });
 
     res.json({
       products,
       total,
-      pages: Math.ceil(total / limit),
+      pages: Math.ceil(total / parseInt(limit)),
       currentPage: parseInt(page)
     });
   } catch (err) {
@@ -64,7 +49,7 @@ router.get('/', async (req, res) => {
 // GET a single product by id
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findOne({ id: req.params.id });
+    const product = await ProductRepository.getById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }

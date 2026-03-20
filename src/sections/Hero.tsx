@@ -2,13 +2,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
+import logo from '../assets/logo.png';
 
 const Hero: React.FC = () => {
     const images = [
-
-        "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=2000",
-        "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=2000",
-        "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=2000"
+        "https://lh3.googleusercontent.com/d/1Y9-681BYFMdL_ccyO6MddQmDB3NfB4YP=s2000",
+        "https://lh3.googleusercontent.com/d/1oRgkZfX26kmZj7qw2CElEJym20jIT6iP=s2000",
+        "https://lh3.googleusercontent.com/d/1Qcb37kbLP1u4vauMLWES679g7sUe6Fz3=s2000"
     ];
 
     const [currentImage, setCurrentImage] = useState(0);
@@ -45,17 +45,23 @@ const Hero: React.FC = () => {
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="max-w-2xl"
+                    className="max-w-5xl"
                 >
-                    <h1 className="text-white text-5xl md:text-8xl font-serif leading-[0.9] mb-6">
-                        REDEMPTION <br />
-                        STARTS HERE
+                    <motion.img
+                        src={logo}
+                        alt="Fashion Redemption"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2, duration: 0.8 }}
+                        className="h-32 w-auto object-contain mb-8 brightness-0 invert"
+                    />
+                    <h1 className="text-white text-5xl md:text-8xl font-serif leading-[0.9] mb-6 whitespace-nowrap">
+                        LOVE. SHOP. WEAR.
                     </h1>
                     <p className="text-white/80 text-lg md:text-xl tracking-wide font-light mb-10 max-w-md">
-                        EXQUISITE CRAFTSMANSHIP MEETS <br />
-                        MODERN REBELLION.
+                        FASHION REDEMPTION.
                     </p>
-                    <Link to="/collections">
+                    <Link to="/sales">
                         <Button variant="primary" className="px-12 py-4 text-base">
                             SHOP NOW
                         </Button>

@@ -1,11 +1,13 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import db from './config/db.js';
+import analyticsService from './services/analyticsService.js';
 
 dotenv.config();
 
@@ -21,12 +23,12 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Global Error Handler for JSON parsing errors
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     console.error('JSON Parsing Error:', err.message);
-    console.error('Raw Body was likely malformed');
     return res.status(400).json({ message: 'Invalid JSON payload received' });
   }
   next();
@@ -34,19 +36,19 @@ app.use((err, req, res, next) => {
 
 // Health Check
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Fashion Redemption Server is running' });
+  res.status(200).json({ status: 'OK', message: 'Fashion Redemption Server is running on MySQL' });
 });
 
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/redemption';
+// Start Server
+app.listen(PORT, async () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log('Using MySQL (Transactional) and DuckDB (Analytics)');
+  
+  // Initialize Analytics
+  try {
+    await analyticsService.syncFromMySQL();
+  } catch (err) {
+    console.error('Analytics initialization failed:', err.message);
+  }
+});
 
-mongoose.connect(MONGODB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err);
-  });

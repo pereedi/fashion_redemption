@@ -31,11 +31,11 @@ const AestheticSection: React.FC = () => {
                         transition={{ duration: 0.8 }}
                     >
                         <h2 className="text-white text-4xl md:text-5xl font-serif mb-8 leading-tight">
-                            COMPLETE THE <br /> AESTHETIC
+                           BECOME A DROPSHIPPER
                         </h2>
                         <p className="text-white/60 mb-12 max-w-md leading-relaxed">
-                            Don't just wear the clothes, live the redemption. Our curated looks
-                            are designed to make a statement from head to toe.
+                            Be a Fashion Redemption Dropshipper and start earning without owning stock.
+                            We handle the products, packaging, and delivery — you focus on selling.
                         </p>
 
                         <div className="space-y-6 mb-12">
@@ -44,8 +44,7 @@ const AestheticSection: React.FC = () => {
                                     01
                                 </div>
                                 <div>
-                                    <h4 className="text-white font-bold leading-none mb-1">CURATED ENSEMBLES</h4>
-                                    <p className="text-white/40 text-xs tracking-wide">Hand-picked by our lead stylists.</p>
+                                    <h4 className="text-white font-bold leading-none mb-1">No upfront inventory cost</h4>
                                 </div>
                             </div>
                             <div className="flex gap-4">
@@ -53,14 +52,29 @@ const AestheticSection: React.FC = () => {
                                     02
                                 </div>
                                 <div>
-                                    <h4 className="text-white font-bold leading-none mb-1">EXCLUSIVE MATERIALS</h4>
-                                    <p className="text-white/40 text-xs tracking-wide">Sourced from the finest tanneries in Italy.</p>
+                                    <h4 className="text-white font-bold leading-none mb-1"> High-profit margins</h4>
+                                </div>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-luxury-red flex items-center justify-center text-white text-xs font-bold font-serif">
+                                    03
+                                </div>
+                                <div>
+                                    <h4 className="text-white font-bold leading-none mb-1">Ready-to-sell premium fashion</h4>
+                                </div>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-luxury-red flex items-center justify-center text-white text-xs font-bold font-serif">
+                                    04
+                                </div>
+                                <div>
+                                    <h4 className="text-white font-bold leading-none mb-1">Nationwide delivery support</h4>
                                 </div>
                             </div>
                         </div>
-                        <Link to="/">
+                        <Link to="https://kingsforms.online/frnetwork">
                         <Button variant="outline">
-                            SHOP THE LOOK
+                            JOIN THE NETWORK
                         </Button>
                         </Link>
                     </motion.div>

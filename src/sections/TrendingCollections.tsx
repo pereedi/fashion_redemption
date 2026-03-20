@@ -2,32 +2,26 @@ import React from 'react';
 import ProductCard from '../components/ui/ProductCard';
 
 const TrendingCollections: React.FC = () => {
-    const products = [
-        {
-            id: 1,
-            name: "Obsidian Moto Jacket",
-            price: "$1,250.00",
-            image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=800",
-        },
-        {
-            id: 2,
-            name: "Crimson Silk Gown",
-            price: "$890.00",
-            image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=800",
-        },
-        {
-            id: 3,
-            name: "Core Essential Tee",
-            price: "$45.00",
-            image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800",
-        },
-        {
-            id: 4,
-            name: "Heritage Chelsea Boot",
-            price: "$620.00",
-            image: "https://images.unsplash.com/photo-1638247025967-b4e38f787b76?auto=format&fit=crop&q=80&w=800",
-        }
-    ];
+    const [products, setProducts] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchTrending = async () => {
+            try {
+                // Fetch 4 trending women products (not in new arrivals)
+                const response = await fetch('http://localhost:5000/api/products?filter=trending');
+                const data = await response.json();
+                setProducts(data.products || []);
+            } catch (err) {
+                console.error('Error fetching trending products:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTrending();
+    }, []);
+
+    if (loading) return null;
 
     return (
         <section className="py-20 bg-white">
@@ -39,14 +33,22 @@ const TrendingCollections: React.FC = () => {
                         </span>
                         <h2 className="text-3xl md:text-4xl font-serif">TRENDING COLLECTIONS</h2>
                     </div>
-                    <a href="/collections" className="text-xs font-bold uppercase tracking-widest border-b border-black pb-1 hover:text-luxury-red hover:border-luxury-red transition-all">
+                    <a href="/sales" className="text-xs font-bold uppercase tracking-widest border-b border-black pb-1 hover:text-luxury-red hover:border-luxury-red transition-all">
                         VIEW ALL
                     </a>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                     {products.map((product) => (
-                        <ProductCard key={product.id} {...product} />
+                        <ProductCard 
+                            key={product.id} 
+                            id={product.id}
+                            name={product.name}
+                            price={`Esp ${Number(product.base_price).toLocaleString()}`}
+                            basePrice={product.base_price}
+                            image={product.images?.[0] || 'https://via.placeholder.com/400x500'}
+                            category={product.category}
+                        />
                     ))}
                 </div>
             </div>

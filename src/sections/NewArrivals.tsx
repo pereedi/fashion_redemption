@@ -3,36 +3,29 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCard from '../components/ui/ProductCard';
 
 const NewArrivals: React.FC = () => {
-    const products = [
-        {
-            id: 1,
-            name: "Alpine Low-Top",
-            price: "$345.00",
-            category: "FOOTWEAR",
-            image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&q=80&w=800",
-        },
-        {
-            id: 2,
-            name: "Vanguard Aviators",
-            price: "$210.00",
-            category: "EYEWEAR",
-            image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&q=80&w=800",
-        },
-        {
-            id: 3,
-            name: "Chronos Stealth Watch",
-            price: "$1,850.00",
-            category: "ACCESSORIES",
-            image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&q=80&w=800",
-        },
-        {
-            id: 4,
-            name: "Prism Tote Bag",
-            price: "$1,100.00",
-            category: "BAGS",
-            image: "https://images.unsplash.com/photo-1584917033904-49097e3f1782?auto=format&fit=crop&q=80&w=800",
-        }
-    ];
+    const [products, setProducts] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchNewArrivals = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/products?filter=new');
+                const data = await response.json();
+                setProducts(data.products || []); // Get products from object
+            } catch (err) {
+                console.error('Error fetching new arrivals:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchNewArrivals();
+    }, []);
+
+    if (loading) return (
+        <div className="py-20 flex justify-center items-center">
+            <div className="w-8 h-8 border-2 border-luxury-red border-t-transparent rounded-full animate-spin" />
+        </div>
+    );
 
     return (
         <section className="py-20 bg-light-gray/50">
@@ -51,7 +44,15 @@ const NewArrivals: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                     {products.map((product) => (
-                        <ProductCard key={product.id} {...product} />
+                        <ProductCard 
+                            key={product.id} 
+                            id={product.id}
+                            name={product.name}
+                            price={`Esp ${Number(product.base_price).toLocaleString()}`}
+                            basePrice={product.base_price}
+                            image={product.images?.[0] || 'https://via.placeholder.com/400x500'}
+                            category={product.category}
+                        />
                     ))}
                 </div>
             </div>

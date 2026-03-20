@@ -11,6 +11,7 @@ interface ProductInfoProps {
         id: number | string;
         name: string;
         price: string;
+        basePrice: number;
         category: string;
         rating: number;
         reviewCount: number;
@@ -36,6 +37,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
             id: product.id,
             name: product.name,
             price: product.price,
+            basePrice: product.basePrice,
             image: product.image,
             size: selectedSize,
             quantity: 1
