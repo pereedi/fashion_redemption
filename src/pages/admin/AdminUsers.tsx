@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { DataTable, type Column } from '../../components/admin/shared/DataTable';
 import { DynamicForm, type FormField } from '../../components/admin/shared/DynamicForm';
 import { X } from 'lucide-react';
+import API_BASE_URL from '../../config/api';
 
 const AdminUsers = () => {
   const { token, user: currentUser } = useAuth();
@@ -17,7 +18,7 @@ const AdminUsers = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/admin/users', {
+      const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -44,7 +45,7 @@ const AdminUsers = () => {
     if (!window.confirm(`Are you sure you want to delete user ${row.name}?`)) return;
     
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${row._id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/users/${row._id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -72,7 +73,7 @@ const AdminUsers = () => {
     
     setIsSubmitting(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${editingUser._id}/role`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/users/${editingUser._id}/role`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,

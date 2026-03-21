@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { DataTable, type Column } from '../../components/admin/shared/DataTable';
 import { DynamicForm, type FormField } from '../../components/admin/shared/DynamicForm';
 import { X } from 'lucide-react';
+import API_BASE_URL from '../../config/api';
 
 const AdminInventory = () => {
   const { token } = useAuth();
@@ -17,7 +18,7 @@ const AdminInventory = () => {
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/admin/products', {
+      const res = await fetch(`${API_BASE_URL}/api/admin/products`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -47,7 +48,7 @@ const AdminInventory = () => {
     
     setIsSubmitting(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/products/${editingProduct._id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/products/${editingProduct._id}`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,

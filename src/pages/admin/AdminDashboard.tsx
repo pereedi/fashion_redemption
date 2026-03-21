@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { TrendingUp, ShoppingCart, Users, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from '../../assets/logo.png';
+import API_BASE_URL from '../../config/api';
 
 const AdminDashboard = () => {
   const { token, user } = useAuth();
@@ -19,7 +20,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/admin/dashboard-stats', {
+        const response = await fetch(`${API_BASE_URL}/api/admin/dashboard-stats`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

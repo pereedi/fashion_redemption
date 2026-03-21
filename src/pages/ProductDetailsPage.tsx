@@ -6,6 +6,7 @@ import ProductGallery from '../components/product/ProductGallery';
 import ProductInfo from '../components/product/ProductInfo';
 import CompleteTheLook from '../components/product/CompleteTheLook';
 import ReviewSection from '../components/product/ReviewSection';
+import API_BASE_URL from '../config/api';
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,7 +19,7 @@ const ProductDetailsPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`http://localhost:5000/api/products/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/products/${id}`);
         if (!response.ok) {
           throw new Error('Product not found or server error');
         }

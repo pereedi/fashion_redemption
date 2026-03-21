@@ -1,6 +1,7 @@
 import React from 'react';
 import ProductCard from '../components/ui/ProductCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import API_BASE_URL from '../config/api';
 
 interface ProductGridProps {
     category?: string;
@@ -21,7 +22,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ category, filters, onPageChan
                     ...(category && { category }),
                     ...filters
                 });
-                const response = await fetch(`http://localhost:5000/api/products?${params}`);
+                const response = await fetch(`${API_BASE_URL}/api/products?${params}`);
                 const data = await response.json();
                 setProducts(data.products || []);
                 setPagination(data);

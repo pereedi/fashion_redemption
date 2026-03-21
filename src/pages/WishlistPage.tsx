@@ -6,6 +6,7 @@ import Navbar from '../components/layout/Navbar';
 import { ShoppingBag } from 'lucide-react';
 import Button from '../components/ui/Button';
 import WishlistGrid from '../components/profile/WishlistGrid';
+import API_BASE_URL from '../config/api';
 
 const WishlistPage: React.FC = () => {
     const { wishlistItems } = useWishlist();
@@ -15,7 +16,7 @@ const WishlistPage: React.FC = () => {
     useEffect(() => {
         const fetchWishlistProducts = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/products');
+                const response = await fetch(`${API_BASE_URL}/api/products`);
                 const data = await response.json();
                 const allProducts = data.products || [];
                 // Filter products that are in the wishlistItems array

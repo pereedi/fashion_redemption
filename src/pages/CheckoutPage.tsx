@@ -9,6 +9,7 @@ import CardForm from '../components/checkout/CardForm';
 import OrderSummary from '../components/checkout/OrderSummary';
 import { useCart } from '../context/CartContext';
 import Navbar from '../components/layout/Navbar';
+import API_BASE_URL from '../config/api';
 
 
 type CheckoutStep = 'cart' | 'information' | 'shipping' | 'payment';
@@ -83,7 +84,7 @@ const CheckoutPage: React.FC = () => {
       };
 
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/orders', {
+      const response = await fetch(`${API_BASE_URL}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

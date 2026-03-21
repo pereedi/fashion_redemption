@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCard from '../components/ui/ProductCard';
+import API_BASE_URL from '../config/api';
 
 const NewArrivals: React.FC = () => {
     const [products, setProducts] = React.useState<any[]>([]);
@@ -9,7 +10,7 @@ const NewArrivals: React.FC = () => {
     React.useEffect(() => {
         const fetchNewArrivals = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/products?filter=new');
+                const response = await fetch(`${API_BASE_URL}/api/products?filter=new`);
                 const data = await response.json();
                 setProducts(data.products || []); // Get products from object
             } catch (err) {

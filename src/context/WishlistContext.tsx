@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import API_BASE_URL from '../config/api';
 
 interface WishlistContextType {
   wishlistItems: string[];
@@ -20,7 +21,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const loadWishlist = async () => {
       if (isAuthenticated && token) {
         try {
-          const response = await fetch('http://localhost:5000/api/wishlist', {
+          const response = await fetch(`${API_BASE_URL}/api/wishlist`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (response.ok) {
@@ -47,7 +48,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const guestWishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
         if (guestWishlist.length > 0) {
           try {
-            const response = await fetch('http://localhost:5000/api/wishlist/sync', {
+            const response = await fetch(`${API_BASE_URL}/api/wishlist/sync`, {
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
@@ -81,7 +82,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const pIdStr = String(productId);
     if (isAuthenticated && token) {
       try {
-        const response = await fetch('http://localhost:5000/api/wishlist/toggle', {
+        const response = await fetch(`${API_BASE_URL}/api/wishlist/toggle`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { 
+import API_BASE_URL from '../../config/api';
   BarChart, 
   Bar, 
   XAxis, 
@@ -22,7 +23,7 @@ const AdminAnalytics = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/admin/analytics', {
+        const res = await fetch(`${API_BASE_URL}/api/admin/analytics`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {

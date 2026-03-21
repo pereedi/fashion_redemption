@@ -3,6 +3,7 @@ import { Search, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Button from './Button';
+import API_BASE_URL from '../../config/api';
 
 interface SearchModalProps {
     isOpen: boolean;
@@ -52,7 +53,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
             setIsLoading(true);
             try {
-                const response = await fetch(`http://localhost:5000/api/products/search?q=${encodeURIComponent(query)}`);
+                const response = await fetch(`${API_BASE_URL}/api/products/search?q=${encodeURIComponent(query)}`);
                 const data = await response.json();
                 setResults(data);
             } catch (err) {

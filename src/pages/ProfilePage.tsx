@@ -7,6 +7,7 @@ import OrderHistory from '../components/profile/OrderHistory';
 import WishlistGrid from '../components/profile/WishlistGrid';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
+import API_BASE_URL from '../config/api';
 
 const ProfilePage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('profile');
@@ -22,7 +23,7 @@ const ProfilePage: React.FC = () => {
       try {
         // Fetch Orders
         if (token) {
-          const ordersRes = await fetch('http://localhost:5000/api/orders/my-orders', {
+          const ordersRes = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (ordersRes.ok) {
@@ -32,7 +33,7 @@ const ProfilePage: React.FC = () => {
         }
 
         // Fetch Wishlist Products
-        const productsRes = await fetch('http://localhost:5000/api/products');
+        const productsRes = await fetch(`${API_BASE_URL}/api/products`);
         if (productsRes.ok) {
           const data = await productsRes.json();
           const allProducts = data.products || [];

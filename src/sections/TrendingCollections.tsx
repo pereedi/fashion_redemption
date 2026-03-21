@@ -1,5 +1,6 @@
 import React from 'react';
 import ProductCard from '../components/ui/ProductCard';
+import API_BASE_URL from '../config/api';
 
 const TrendingCollections: React.FC = () => {
     const [products, setProducts] = React.useState<any[]>([]);
@@ -9,7 +10,7 @@ const TrendingCollections: React.FC = () => {
         const fetchTrending = async () => {
             try {
                 // Fetch 4 trending women products (not in new arrivals)
-                const response = await fetch('http://localhost:5000/api/products?filter=trending');
+                const response = await fetch(`${API_BASE_URL}/api/products?filter=trending`);
                 const data = await response.json();
                 setProducts(data.products || []);
             } catch (err) {

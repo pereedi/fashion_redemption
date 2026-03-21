@@ -4,6 +4,7 @@ import { DataTable, type Column } from '../../components/admin/shared/DataTable'
 import { DynamicForm, type FormField } from '../../components/admin/shared/DynamicForm';
 import { Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import API_BASE_URL from '../../config/api';
 
 const AdminProducts = () => {
   const { token } = useAuth();
@@ -18,7 +19,7 @@ const AdminProducts = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/admin/products', {
+      const res = await fetch(`${API_BASE_URL}/api/admin/products`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -40,7 +41,7 @@ const AdminProducts = () => {
     if (!window.confirm(`Are you sure you want to delete ${row.name}?`)) return;
     
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/products/${row._id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/products/${row._id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -68,8 +69,8 @@ const AdminProducts = () => {
     setIsSubmitting(true);
     try {
       const url = editingProduct 
-        ? `http://localhost:5000/api/admin/products/${editingProduct._id}`
-        : `http://localhost:5000/api/admin/products`;
+        ? `${API_BASE_URL}/api/admin/products/${editingProduct._id}`
+        : `${API_BASE_URL}/api/admin/products`;
       
       const method = editingProduct ? 'PUT' : 'POST';
       
