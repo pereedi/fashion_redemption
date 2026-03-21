@@ -12,8 +12,8 @@ const Navbar: React.FC = () => {
     const { isAuthenticated, user } = useAuth();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const navLinks = [
-        { name: 'MEN', href: '/men' },
         { name: 'WOMEN', href: '/women' },
+        { name: 'MEN', href: '/men' },
         { name: 'KIDS', href: '/kids' },
         { name: 'NEW ARRIVALS', href: '/new-arrivals' },
         { name: 'SALES', href: '/sales' },

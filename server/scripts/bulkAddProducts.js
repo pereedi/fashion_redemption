@@ -168,7 +168,7 @@ const productsToSeed = [
   base_price: 140.00,
   rating: 4.7,
   review_count: 19,
-  images: ["https://drive.google.com/file/d/1oETOdFwR_4FgIPpyKShdBfXJxLPQvbiP/view?usp=sharing"],
+  images: ["https://drive.google.com/file/d/1yRHS2f8ipOXyOjAyI7U7c6rgBQwbHT4Z/view?usp=sharing"],
   variants: [
     { size: "XS", color: "BLACK", stock: 25 },
     { size: "S", color: "BLACK", stock: 23 },
@@ -202,7 +202,7 @@ const productsToSeed = [
   base_price: 110.00,
   rating: 4.5,
   review_count: 16,
-  images: ["https://drive.google.com/file/d/1gKdFMKY9kOVfQ95N4WuxbqcvGeJ4b1Sc/view?usp=sharing"],
+  images: ["https://drive.google.com/file/d/1s0Muk2at3mWYm2Kj2crBPkv-_oj0R2C1/view?usp=sharing"],
   variants: [
     { size: "XS", color: "DENIM BLUE", stock: 30 },
     { size: "S", color: "DENIM BLUE", stock: 27 },
@@ -219,7 +219,7 @@ const productsToSeed = [
   base_price: 220.00,
   rating: 4.8,
   review_count: 20,
-  images: ["https://drive.google.com/file/d/14eeRzXOrMwl8rZ56W6Oc6Kzp-B_O-nIB/view?usp=sharing"],
+  images: ["https://drive.google.com/file/d/18dW8ucNXWorE-EwN_1wus0asl6NMeKLh/view?usp=sharing"],
   variants: [
     { size: "XS", color: "CHARCOAL GREY", stock: 20 },
     { size: "S", color: "CHARCOAL GREY", stock: 18 },
@@ -236,7 +236,7 @@ const productsToSeed = [
   base_price: 165.00,
   rating: 4.6,
   review_count: 15,
-  images: ["https://drive.google.com/file/d/1daVgS5wojnzJH0i_Cj1YTDwiDtzLRgOj/view?usp=sharing"],
+  images: ["https://drive.google.com/file/d/1sCMANDxl2kgxgqZAr7ZSeYG1kCS8U9Ql/view?usp=sharing"],
   variants: [
     { size: "XS", color: "SAND BEIGE", stock: 26 },
     { size: "S", color: "SAND BEIGE", stock: 24 },
