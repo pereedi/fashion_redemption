@@ -84,14 +84,33 @@ class ProductRepository {
         const productImages = images.filter(img => Number(img.product_id) === Number(p.id));
         const primaryImage = productImages.find(img => img.is_primary) || productImages[0];
 
+        // Fallback images if no images in database
+        const fallbackImages = [
+          'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400',
+          'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=400',
+          'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
+          'https://images.unsplash.com/photo-1539109132314-347596ad9cf2?auto=format&fit=crop&q=80&w=400'
+        ];
+
+        const getImageUrl = () => {
+          if (primaryImage?.url) return primaryImage.url;
+          // Use fallback based on product id
+          return fallbackImages[Number(p.id) % fallbackImages.length] || fallbackImages[0];
+        };
+
+        const getAllImages = () => {
+          if (productImages.length > 0) return productImages.map(img => img.url);
+          return fallbackImages;
+        };
+
         return {
           ...p,
           id: p.external_id,
           internal_id: p.id,
           basePrice: Number(p.base_price),
           price: `Esp ${Number(p.base_price).toLocaleString()}`,
-          image: primaryImage?.url || 'https://via.placeholder.com/400x500',
-          images: productImages.map(img => img.url),
+          image: getImageUrl(),
+          images: getAllImages(),
           variants: variants.filter(v => Number(v.product_id) === Number(p.id)),
           sizes: [...new Set(variants.filter(v => Number(v.product_id) === Number(p.id)).map(v => v.size))],
           colors: [...new Set(variants.filter(v => Number(v.product_id) === Number(p.id)).map(v => v.color))],
@@ -127,20 +146,39 @@ class ProductRepository {
       const relatedProductIds = relatedProductsRaw.map(p => p.id);
       const relatedImages = await db('product_images').whereIn('product_id', relatedProductIds).where('is_primary', true);
 
-      const relatedProducts = relatedProductsRaw.map(p => ({
-        ...p,
-        id: p.external_id,
-        price: `Esp ${Number(p.base_price).toLocaleString()}`,
-        image: relatedImages.find(img => img.product_id === p.id)?.url || 'https://via.placeholder.com/400x500'
-      }));
+      const relatedProducts = relatedProductsRaw.map(p => {
+        const fallbackImages = [
+          'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400',
+          'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=400',
+          'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
+          'https://images.unsplash.com/photo-1539109132314-347596ad9cf2?auto=format&fit=crop&q=80&w=400'
+        ];
+        const relatedImg = relatedImages.find(img => img.product_id === p.id);
+        return {
+          ...p,
+          id: p.external_id,
+          price: `Esp ${Number(p.base_price).toLocaleString()}`,
+          image: relatedImg?.url || fallbackImages[Number(p.id) % fallbackImages.length] || fallbackImages[0]
+        };
+      });
+
+      const primaryImage = images[0];
+
+      // Fallback images if no images in database
+      const fallbackImages = [
+        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
+        'https://images.unsplash.com/photo-1539109132314-347596ad9cf2?auto=format&fit=crop&q=80&w=400'
+      ];
 
       return {
         ...product,
         id: product.external_id,
         internal_id: product.id,
         price: `Esp ${Number(product.base_price).toLocaleString()}`,
-        image: images[0]?.url || 'https://via.placeholder.com/400x500',
-        images: images.map(img => img.url),
+        image: primaryImage?.url || fallbackImages[Number(product.id) % fallbackImages.length] || fallbackImages[0],
+        images: images.length > 0 ? images.map(img => img.url) : fallbackImages,
         variants,
         reviews,
         relatedProducts,
