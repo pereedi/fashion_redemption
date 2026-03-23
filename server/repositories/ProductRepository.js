@@ -38,6 +38,11 @@ class ProductRepository {
                      .orderBy('products.rating', 'desc');
         filters.limit = 4;
       }
+      if (filters.filter === 'sale') {
+        // Sale: Products with discounted prices (on_sale = true or sale_price < base_price)
+        query = query.where('products.on_sale', true)
+                     .orderBy('products.created_at', 'desc');
+      }
 
       const { page = 1, limit = 12 } = filters;
       const offset = (page - 1) * limit;

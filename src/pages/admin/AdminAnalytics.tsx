@@ -79,12 +79,12 @@ const AdminAnalytics = () => {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12, fill: '#64748b' }}
-                  tickFormatter={(value) => `Esp ${value}`}
+                  tickFormatter={(value) => `Esp ${Number(value || 0).toLocaleString()}`}
                 />
                 <Tooltip 
                   cursor={{ fill: 'transparent' }}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  formatter={(value: any) => [`Esp ${Number(value).toFixed(2)}`, 'Revenue']}
+                  formatter={(value: any) => [`Esp ${Number(value || 0).toFixed(2)}`, 'Revenue']}
                   labelFormatter={(label) => `Date: ${label}`}
                 />
                 <Line 
@@ -126,7 +126,7 @@ const AdminAnalytics = () => {
                 <Tooltip 
                   cursor={{ fill: '#f1f5f9' }}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  formatter={(value: any) => [value, 'Orders']}
+                  formatter={(value: any) => [value || 0, 'Orders']}
                   labelFormatter={(label) => `Date: ${label}`}
                 />
                 <Bar 
