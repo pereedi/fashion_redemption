@@ -21,6 +21,10 @@ export const logger = {
     console.error(`[ERROR] ${message}`, meta || '');
     logToFile('error', message, meta);
   },
+  warn: (message, meta) => {
+    console.warn(`[WARN] ${message}`, meta || '');
+    logToFile('warn', message, meta);
+  },
   db: (message, meta) => {
     console.log(`[DATABASE] ${message}`, meta || '');
     logToFile('database', message, meta);
