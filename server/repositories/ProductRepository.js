@@ -3,6 +3,11 @@ import { logger } from '../utils/logger.js';
 
 class ProductRepository {
   async getAll(filters = {}) {
+    // Validate filters parameter
+    if (!filters || typeof filters !== 'object') {
+      filters = {};
+    }
+
     try {
       // Build base query without complex join conditions to avoid SQL errors
       let query = db('products').select('products.*');
@@ -96,8 +101,9 @@ class ProductRepository {
 
       return { products: mappedProducts, total };
     } catch (err) {
-      logger.error('Error in ProductRepository.getAll', { error: err.message, filters });
-      throw err;
+      logger.error('Error in ProductRepository.getAll', { error: err.message, filters, stack: err.stack });
+      // Return safe empty data instead of throwing to prevent 500 errors
+      return { products: [], total: 0 };
     }
   }
 

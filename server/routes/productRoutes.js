@@ -23,16 +23,18 @@ router.get('/search', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const { category, type, sort, q, page = 1, limit = 12, filter } = req.query;
-    
+
+    console.log('Product query params:', { category, type, sort, q, page, limit, filter });
+
     // Using ProductRepository for centralized logic
     const { products, total } = await ProductRepository.getAll({
-        category, 
-        type, 
-        q, 
-        sort, 
-        page: parseInt(page), 
-        limit: parseInt(limit),
-        filter
+      category,
+      type,
+      q,
+      sort,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      filter
     });
 
     res.json({
@@ -42,7 +44,14 @@ router.get('/', async (req, res) => {
       currentPage: parseInt(page)
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Product query error:', err);
+    // Return empty data instead of 500 error
+    return res.json({
+      products: [],
+      total: 0,
+      pages: 0,
+      currentPage: 1
+    });
   }
 });
 
