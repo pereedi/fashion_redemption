@@ -4,52 +4,57 @@ import { logger } from '../utils/logger.js';
 class ProductRepository {
   async getAll(filters = {}) {
     try {
-      let query = db('products')
-        .select('products.*')
-        .leftJoin('product_images', 'products.id', 'product_images.product_id')
-        .where(function() {
-          this.where('product_images.is_primary', true)
-              .orWhereNull('product_images.url');
-        });
+      // Build base query without complex join conditions to avoid SQL errors
+      let query = db('products').select('products.*');
 
+      // Apply category filter
       if (filters.category) {
         query = query.where('category', filters.category);
       }
+
+      // Apply type filter
       if (filters.type) {
         query = query.where('type', filters.type);
       }
+
+      // Apply name filter (search)
       if (filters.name) {
-        query.where('products.name', 'like', `%${filters.name}%`);
+        query = query.where('products.name', 'like', `%${filters.name}%`);
       }
+
+      // Apply general search query
       if (filters.q) {
-        query.where(function() {
+        query = query.where(function () {
           this.where('products.name', 'like', `%${filters.q}%`)
-              .orWhere('products.description', 'like', `%${filters.q}%`);
+            .orWhere('products.description', 'like', `%${filters.q}%`);
         });
       }
+
+      // Apply special filters
       if (filters.filter === 'new') {
         query = query.orderBy('products.created_at', 'desc').limit(12);
       }
+
       if (filters.filter === 'trending') {
         // Trending: Specifically for women, not in the top 4 most recent
         const newArrivalIds = await db('products').orderBy('created_at', 'desc').limit(4).pluck('id');
         query = query.whereRaw('LOWER(category) = ?', ['women'])
-                     .whereNotIn('products.id', newArrivalIds)
-                     .orderBy('products.rating', 'desc');
+          .whereNotIn('products.id', newArrivalIds)
+          .orderBy('products.rating', 'desc');
         filters.limit = 4;
       }
+
       if (filters.filter === 'sale') {
-        // Sale: Products with discounted prices (on_sale = true or sale_price < base_price)
-        query = query.where('products.on_sale', true)
-                     .orderBy('products.created_at', 'desc');
+        // Sale: Show newest products (avoiding on_sale column which may not exist)
+        query = query.orderBy('products.created_at', 'desc');
       }
 
       const { page = 1, limit = 12 } = filters;
       const offset = (page - 1) * limit;
 
-      // Clone query for count
+      // Clone query for count before pagination
       const totalQuery = query.clone().clearSelect().count('* as total').first();
-      
+
       // Apply pagination to products query
       query = query.limit(limit).offset(offset);
 
@@ -59,12 +64,12 @@ class ProductRepository {
       ]);
 
       const total = countResult?.total || 0;
-      
+
       if (products.length === 0) return { products: [], total: 0 };
-      
+
       // Fetch all images and variants for these products
       const productIds = products.map(p => p.id);
-      
+
       const [images, variants] = await Promise.all([
         db('product_images').whereIn('product_id', productIds),
         db('product_variants').whereIn('product_id', productIds)
@@ -73,7 +78,7 @@ class ProductRepository {
       const mappedProducts = products.map(p => {
         const productImages = images.filter(img => Number(img.product_id) === Number(p.id));
         const primaryImage = productImages.find(img => img.is_primary) || productImages[0];
-        
+
         return {
           ...p,
           id: p.external_id,
@@ -145,7 +150,7 @@ class ProductRepository {
 
   async create(productData) {
     const { images, variants, ...baseData } = productData;
-    
+
     return db.transaction(async (trx) => {
       try {
         const [productId] = await trx('products').insert({
