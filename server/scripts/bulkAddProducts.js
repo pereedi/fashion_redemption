@@ -259,11 +259,15 @@ async function seed() {
 
   for (const product of productsToSeed) {
     try {
-      // 0. Check for existing product by name
-      const existing = await ProductRepository.getAll({ name: product.name });
-      if (existing.products && existing.products.length > 0) {
-        logger.info(`Product already exists: ${product.name}. Skipping...`);
-        continue;
+      // 0. Check for existing product by name (skip if DB not available)
+      try {
+        const existing = await ProductRepository.getAll({ name: product.name });
+        if (existing.products && existing.products.length > 0) {
+          logger.info(`Product already exists: ${product.name}. Skipping...`);
+          continue;
+        }
+      } catch (dbErr) {
+        logger.warn(`Database not available, adding product without duplicate check: ${product.name}`);
       }
 
       // 1. Process Google Drive links
@@ -275,9 +279,13 @@ async function seed() {
         images: directImages
       };
 
-      // 3. Create via Repository
-      const productId = await ProductRepository.create(payload);
-      logger.info(`Successfully added product: ${product.name} (ID: ${productId})`);
+      // 3. Create via Repository (skip if DB not available)
+      try {
+        const productId = await ProductRepository.create(payload);
+        logger.info(`Successfully added product: ${product.name} (ID: ${productId})`);
+      } catch (createErr) {
+        logger.warn(`Could not create product in DB, skipping: ${product.name}`);
+      }
     } catch (err) {
       logger.error(`Failed to add product: ${product.name}`, { error: err.message });
     }
