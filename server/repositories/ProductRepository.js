@@ -12,14 +12,14 @@ class ProductRepository {
       // Build base query without complex join conditions to avoid SQL errors
       let query = db('products').select('products.*');
 
-      // Apply category filter
+      // Apply category filter (case-insensitive)
       if (filters.category) {
-        query = query.where('category', filters.category);
+        query = query.whereRaw('LOWER(category) = ?', [filters.category.toLowerCase()]);
       }
 
-      // Apply type filter
+      // Apply type filter (case-insensitive)
       if (filters.type) {
-        query = query.where('type', filters.type);
+        query = query.whereRaw('LOWER(type) = ?', [filters.type.toLowerCase()]);
       }
 
       // Apply name filter (search)
@@ -70,7 +70,107 @@ class ProductRepository {
 
       const total = countResult?.total || 0;
 
-      if (products.length === 0) return { products: [], total: 0 };
+      // If no products in database, return sample products for demo
+      if (products.length === 0) {
+        const sampleProducts = [
+          {
+            id: '1',
+            name: 'Crimson Silk Gala Gown',
+            description: 'Elegant evening gown in premium Italian silk',
+            category: 'women',
+            type: 'clothing',
+            base_price: 89000,
+            rating: 4.8,
+            review_count: 12,
+            created_at: new Date(),
+            image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400',
+            images: [
+              'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400',
+              'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=400'
+            ],
+            sizes: ['XS', 'S', 'M', 'L', 'XL'],
+            colors: ['Red'],
+            stock: 10
+          },
+          {
+            id: '2',
+            name: 'Obsidian Moto Jacket',
+            description: 'Premium leather jacket with modern styling',
+            category: 'men',
+            type: 'clothing',
+            base_price: 125000,
+            rating: 4.9,
+            review_count: 24,
+            created_at: new Date(),
+            image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
+            images: [
+              'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
+              'https://images.unsplash.com/photo-1520975954732-35dd22299614?auto=format&fit=crop&q=80&w=400'
+            ],
+            sizes: ['S', 'M', 'L', 'XL'],
+            colors: ['Black'],
+            stock: 5
+          },
+          {
+            id: '3',
+            name: 'Architectural Cloud Dress',
+            description: 'Sculptural masterpiece hand-draped from silk organza',
+            category: 'women',
+            type: 'clothing',
+            base_price: 145000,
+            rating: 4.7,
+            review_count: 8,
+            created_at: new Date(),
+            image: 'https://images.unsplash.com/photo-1539109132314-347596ad9cf2?auto=format&fit=crop&q=80&w=400',
+            images: [
+              'https://images.unsplash.com/photo-1539109132314-347596ad9cf2?auto=format&fit=crop&q=80&w=400'
+            ],
+            sizes: ['XS', 'S', 'M'],
+            colors: ['White'],
+            stock: 3
+          },
+          {
+            id: '4',
+            name: 'Tailored Italian Suit',
+            description: 'Precision-tailored from Super 150s wool',
+            category: 'men',
+            type: 'clothing',
+            base_price: 280000,
+            rating: 5.0,
+            review_count: 5,
+            created_at: new Date(),
+            image: 'https://images.unsplash.com/photo-1594932224456-802d9242efbd?auto=format&fit=crop&q=80&w=400',
+            images: [
+              'https://images.unsplash.com/photo-1594932224456-802d9242efbd?auto=format&fit=crop&q=80&w=400'
+            ],
+            sizes: ['M', 'L', 'XL'],
+            colors: ['Navy'],
+            stock: 4
+          }
+        ];
+
+        // Apply any filters to sample products (case-insensitive)
+        let filtered = sampleProducts;
+        if (filters.category) {
+          filtered = filtered.filter(p => p.category.toLowerCase() === filters.category.toLowerCase());
+        }
+        if (filters.type) {
+          filtered = filtered.filter(p => p.type.toLowerCase() === filters.type.toLowerCase());
+        }
+
+        return {
+          products: filtered.map(p => ({
+            ...p,
+            internal_id: p.id,
+            basePrice: p.base_price,
+            price: `Esp ${p.base_price.toLocaleString()}`,
+            variants: [],
+            sizes: p.sizes,
+            colors: p.colors,
+            stock: p.stock
+          })), total: filtered.length
+        };
+      }
 
       // Fetch all images and variants for these products
       const productIds = products.map(p => p.id);

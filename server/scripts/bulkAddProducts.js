@@ -18,7 +18,8 @@ const convertGoogleDriveLink = (url) => {
     fileId = url.split('id=')[1].split('&')[0];
   }
   
-  return fileId ? `https://lh3.googleusercontent.com/d/${fileId}=s1000` : url;
+  // Use the correct Google Drive direct link format
+  return fileId ? `https://lh3.googleusercontent.com/d/${fileId}` : url;
 };
 
 /**
