@@ -13,6 +13,9 @@ const FALLBACK_USER = {
 
 class UserRepository {
   async comparePassword(candidatePassword, hashedPassword) {
+    if (!hashedPassword) {
+      return false;
+    }
     return await bcrypt.compare(candidatePassword, hashedPassword);
   }
   async findByEmail(email) {

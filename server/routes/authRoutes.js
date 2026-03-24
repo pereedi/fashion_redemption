@@ -37,12 +37,12 @@ router.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const userId = await UserRepository.create({ 
-      name, 
-      email, 
-      password: hashedPassword 
+    const userId = await UserRepository.create({
+      name,
+      email,
+      password: hashedPassword
     });
-    
+
     const newUser = await UserRepository.findById(userId);
     console.log('User created successfully:', userId);
     const token = signToken(userId);
@@ -79,13 +79,18 @@ router.post('/login', async (req, res) => {
 
     let user = null;
     let isFallbackUser = false;
+    const fallbackEmail = process.env.FALLBACK_ADMIN_EMAIL || 'admin@redemption.com';
 
     try {
       user = await UserRepository.findByEmail(email);
+      // Check if returned user is the fallback user (has id 999)
+      if (user && user.id === 999) {
+        isFallbackUser = true;
+      }
     } catch (dbError) {
       // Database unavailable - check for fallback credentials
       console.log('Database unavailable, checking fallback credentials');
-      if (email === FALLBACK_ADMIN.email && password === FALLBACK_ADMIN.password) {
+      if (email === fallbackEmail && password === FALLBACK_ADMIN.password) {
         user = {
           id: 999,
           email: FALLBACK_ADMIN.email,
@@ -103,9 +108,16 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Incorrect email or password' });
     }
 
-    // Check password for non-fallback users
-    if (!isFallbackUser && !(await UserRepository.comparePassword(password, user.password))) {
-      console.log('Invalid credentials for:', email);
+    // Check password for non-fallback users (skip if user has no password - fallback user)
+    if (!isFallbackUser && user.password) {
+      const isValidPassword = await UserRepository.comparePassword(password, user.password);
+      if (!isValidPassword) {
+        console.log('Invalid credentials for:', email);
+        return res.status(401).json({ message: 'Incorrect email or password' });
+      }
+    } else if (!isFallbackUser && !user.password) {
+      // User exists but has no password - reject
+      console.log('User has no password:', email);
       return res.status(401).json({ message: 'Incorrect email or password' });
     }
 
