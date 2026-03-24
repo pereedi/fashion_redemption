@@ -11,6 +11,14 @@ const signToken = (id) => {
   });
 };
 
+// Fallback admin credentials when database is unavailable
+const FALLBACK_ADMIN = {
+  email: process.env.FALLBACK_ADMIN_EMAIL || 'admin@redemption.com',
+  password: process.env.FALLBACK_ADMIN_PASSWORD || 'admin123',
+  name: 'Admin User',
+  role: 'admin'
+};
+
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
@@ -69,8 +77,34 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
-    const user = await UserRepository.findByEmail(email);
-    if (!user || !(await UserRepository.comparePassword(password, user.password))) {
+    let user = null;
+    let isFallbackUser = false;
+
+    try {
+      user = await UserRepository.findByEmail(email);
+    } catch (dbError) {
+      // Database unavailable - check for fallback credentials
+      console.log('Database unavailable, checking fallback credentials');
+      if (email === FALLBACK_ADMIN.email && password === FALLBACK_ADMIN.password) {
+        user = {
+          id: 999,
+          email: FALLBACK_ADMIN.email,
+          name: FALLBACK_ADMIN.name,
+          role: FALLBACK_ADMIN.role,
+          wishlist: []
+        };
+        isFallbackUser = true;
+        console.log('Authenticated via fallback admin credentials');
+      }
+    }
+
+    if (!user) {
+      console.log('User not found:', email);
+      return res.status(401).json({ message: 'Incorrect email or password' });
+    }
+
+    // Check password for non-fallback users
+    if (!isFallbackUser && !(await UserRepository.comparePassword(password, user.password))) {
       console.log('Invalid credentials for:', email);
       return res.status(401).json({ message: 'Incorrect email or password' });
     }
@@ -78,7 +112,8 @@ router.post('/login', async (req, res) => {
     const token = signToken(user.id);
     console.log('User logged in:', user.id);
 
-    const fullUser = await UserRepository.findById(user.id);
+    // Skip findById for fallback user to avoid DB call
+    const fullUser = isFallbackUser ? user : await UserRepository.findById(user.id);
 
     res.status(200).json({
       status: 'success',
@@ -89,7 +124,7 @@ router.post('/login', async (req, res) => {
           name: fullUser.name,
           email: fullUser.email,
           role: fullUser.role,
-          wishlist: fullUser.wishlist
+          wishlist: fullUser.wishlist || []
         }
       }
     });
