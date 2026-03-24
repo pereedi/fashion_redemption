@@ -1,7 +1,117 @@
 import db from '../config/db.js';
 import { logger } from '../utils/logger.js';
+import { productsToSeed } from '../utils/mockProducts.js';
 
 class ProductRepository {
+
+  getSampleProducts(filters = {}) {
+    const sampleProducts = productsToSeed.map((p, index) => {
+      const sanitizedName = p.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      return {
+        id: `bulk_${index + 1}`,
+        internal_id: `bulk_${index + 1}`,
+        external_id: `bulk_${index + 1}`,
+        name: p.name,
+        description: p.description,
+        category: p.category.toLowerCase(), // frontend expects lowercase Usually
+        type: p.type.toLowerCase(),
+        base_price: p.base_price,
+        basePrice: p.base_price,
+        price: `Esp ${p.base_price.toLocaleString()}`,
+        rating: p.rating,
+        review_count: p.review_count,
+        created_at: new Date(Date.now() - index * 10000), // give them slight logical ordering
+        image: `/images/products/${sanitizedName}_1.jpg`,
+        images: p.images.map((img, i) => `/images/products/${sanitizedName}_${i + 1}.jpg`),
+        sizes: p.variants ? [...new Set(p.variants.map(v => v.size))] : [],
+        colors: p.variants ? [...new Set(p.variants.map(v => v.color))] : [],
+        stock: p.variants ? p.variants.reduce((acc, v) => acc + (v.stock || 0), 0) : 0,
+        variants: p.variants || [],
+        reviews: [],
+        relatedProducts: []
+      };
+    });
+
+    // Add back the exactly requested Men's products pointing to the original remaining images
+    sampleProducts.push({
+      id: 'bulk_99',
+      internal_id: 'bulk_99',
+      external_id: 'bulk_99',
+      name: 'Obsidian Moto Jacket',
+      description: 'Premium leather jacket with modern styling',
+      category: 'men',
+      type: 'clothing',
+      basePrice: 125000,
+      base_price: 125000,
+      price: 'Esp 125,000',
+      rating: 4.9,
+      review_count: 24,
+      created_at: new Date(Date.now() - 5000000),
+      image: '/images/products/product_3.jpg',
+      images: ['/images/products/product_3.jpg', '/images/products/product_4.jpg'],
+      sizes: ['S', 'M', 'L', 'XL'],
+      colors: ['Black'],
+      stock: 5,
+      variants: [],
+      reviews: [],
+      relatedProducts: []
+    }, {
+      id: 'bulk_100',
+      internal_id: 'bulk_100',
+      external_id: 'bulk_100',
+      name: 'Tailored Italian Suit',
+      description: 'Precision-tailored from Super 150s wool',
+      category: 'men',
+      type: 'clothing',
+      basePrice: 280000,
+      base_price: 280000,
+      price: 'Esp 280,000',
+      rating: 5.0,
+      review_count: 5,
+      created_at: new Date(Date.now() - 6000000),
+      image: '/images/products/product_6.jpg',
+      images: ['/images/products/product_6.jpg'],
+      sizes: ['M', 'L', 'XL'],
+      colors: ['Navy'],
+      stock: 4,
+      variants: [],
+      reviews: [],
+      relatedProducts: []
+    });
+
+    let filtered = sampleProducts;
+    if (filters.category && filters.category !== 'undefined') {
+      filtered = filtered.filter(p => p.category.toLowerCase() === filters.category.toLowerCase());
+    }
+    if (filters.type && filters.type !== 'undefined' && filters.type !== '') {
+      filtered = filtered.filter(p => p.type.toLowerCase() === filters.type.toLowerCase());
+    }
+
+    // Special filters
+    if (filters.filter === 'new') {
+      filtered = filtered.sort((a, b) => b.created_at - a.created_at).slice(0, 12);
+    }
+    if (filters.filter === 'trending') {
+      filtered = filtered.filter(p => p.category === 'women')
+        .sort((a, b) => b.rating - a.rating)
+        .slice(0, 4);
+    }
+
+    return {
+      products: filtered,
+      total: filtered.length
+    };
+  }
+
+  getFallbackImages() {
+    return [
+      '/images/products/product_1.jpg',
+      '/images/products/product_2.jpg',
+      '/images/products/product_3.jpg',
+      '/images/products/product_5.jpg'
+    ];
+  }
+
   async getAll(filters = {}) {
     // Validate filters parameter
     if (!filters || typeof filters !== 'object') {
@@ -13,12 +123,12 @@ class ProductRepository {
       let query = db('products').select('products.*');
 
       // Apply category filter (case-insensitive)
-      if (filters.category) {
+      if (filters.category && filters.category !== 'undefined') {
         query = query.whereRaw('LOWER(category) = ?', [filters.category.toLowerCase()]);
       }
 
       // Apply type filter (case-insensitive)
-      if (filters.type) {
+      if (filters.type && filters.type !== 'undefined' && filters.type !== '') {
         query = query.whereRaw('LOWER(type) = ?', [filters.type.toLowerCase()]);
       }
 
@@ -28,7 +138,7 @@ class ProductRepository {
       }
 
       // Apply general search query
-      if (filters.q) {
+      if (filters.q && filters.q !== 'undefined') {
         query = query.where(function () {
           this.where('products.name', 'like', `%${filters.q}%`)
             .orWhere('products.description', 'like', `%${filters.q}%`);
@@ -50,17 +160,14 @@ class ProductRepository {
       }
 
       if (filters.filter === 'sale') {
-        // Sale: Show newest products (avoiding on_sale column which may not exist)
         query = query.orderBy('products.created_at', 'desc');
       }
 
       const { page = 1, limit = 12 } = filters;
       const offset = (page - 1) * limit;
 
-      // Clone query for count before pagination
       const totalQuery = query.clone().clearSelect().count('* as total').first();
 
-      // Apply pagination to products query
       query = query.limit(limit).offset(offset);
 
       const [products, countResult] = await Promise.all([
@@ -72,104 +179,7 @@ class ProductRepository {
 
       // If no products in database, return sample products for demo
       if (products.length === 0) {
-        const sampleProducts = [
-          {
-            id: '1',
-            name: 'Crimson Silk Gala Gown',
-            description: 'Elegant evening gown in premium Italian silk',
-            category: 'women',
-            type: 'clothing',
-            base_price: 89000,
-            rating: 4.8,
-            review_count: 12,
-            created_at: new Date(),
-            image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400',
-            images: [
-              'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400',
-              'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=400'
-            ],
-            sizes: ['XS', 'S', 'M', 'L', 'XL'],
-            colors: ['Red'],
-            stock: 10
-          },
-          {
-            id: '2',
-            name: 'Obsidian Moto Jacket',
-            description: 'Premium leather jacket with modern styling',
-            category: 'men',
-            type: 'clothing',
-            base_price: 125000,
-            rating: 4.9,
-            review_count: 24,
-            created_at: new Date(),
-            image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
-            images: [
-              'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
-              'https://images.unsplash.com/photo-1520975954732-35dd22299614?auto=format&fit=crop&q=80&w=400'
-            ],
-            sizes: ['S', 'M', 'L', 'XL'],
-            colors: ['Black'],
-            stock: 5
-          },
-          {
-            id: '3',
-            name: 'Architectural Cloud Dress',
-            description: 'Sculptural masterpiece hand-draped from silk organza',
-            category: 'women',
-            type: 'clothing',
-            base_price: 145000,
-            rating: 4.7,
-            review_count: 8,
-            created_at: new Date(),
-            image: 'https://images.unsplash.com/photo-1539109132314-347596ad9cf2?auto=format&fit=crop&q=80&w=400',
-            images: [
-              'https://images.unsplash.com/photo-1539109132314-347596ad9cf2?auto=format&fit=crop&q=80&w=400'
-            ],
-            sizes: ['XS', 'S', 'M'],
-            colors: ['White'],
-            stock: 3
-          },
-          {
-            id: '4',
-            name: 'Tailored Italian Suit',
-            description: 'Precision-tailored from Super 150s wool',
-            category: 'men',
-            type: 'clothing',
-            base_price: 280000,
-            rating: 5.0,
-            review_count: 5,
-            created_at: new Date(),
-            image: 'https://images.unsplash.com/photo-1594932224456-802d9242efbd?auto=format&fit=crop&q=80&w=400',
-            images: [
-              'https://images.unsplash.com/photo-1594932224456-802d9242efbd?auto=format&fit=crop&q=80&w=400'
-            ],
-            sizes: ['M', 'L', 'XL'],
-            colors: ['Navy'],
-            stock: 4
-          }
-        ];
-
-        // Apply any filters to sample products (case-insensitive)
-        let filtered = sampleProducts;
-        if (filters.category) {
-          filtered = filtered.filter(p => p.category.toLowerCase() === filters.category.toLowerCase());
-        }
-        if (filters.type) {
-          filtered = filtered.filter(p => p.type.toLowerCase() === filters.type.toLowerCase());
-        }
-
-        return {
-          products: filtered.map(p => ({
-            ...p,
-            internal_id: p.id,
-            basePrice: p.base_price,
-            price: `Esp ${p.base_price.toLocaleString()}`,
-            variants: [],
-            sizes: p.sizes,
-            colors: p.colors,
-            stock: p.stock
-          })), total: filtered.length
-        };
+        return this.getSampleProducts(filters);
       }
 
       // Fetch all images and variants for these products
@@ -180,17 +190,11 @@ class ProductRepository {
         db('product_variants').whereIn('product_id', productIds)
       ]);
 
+      const fallbackImages = this.getFallbackImages();
+
       const mappedProducts = products.map(p => {
         const productImages = images.filter(img => Number(img.product_id) === Number(p.id));
         const primaryImage = productImages.find(img => img.is_primary) || productImages[0];
-
-        // Fallback images if no images in database
-        const fallbackImages = [
-          'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400',
-          'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=400',
-          'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
-          'https://images.unsplash.com/photo-1539109132314-347596ad9cf2?auto=format&fit=crop&q=80&w=400'
-        ];
 
         const getImageUrl = () => {
           if (primaryImage?.url) return primaryImage.url;
@@ -221,8 +225,8 @@ class ProductRepository {
       return { products: mappedProducts, total };
     } catch (err) {
       logger.error('Error in ProductRepository.getAll', { error: err.message, filters, stack: err.stack });
-      // Return safe empty data instead of throwing to prevent 500 errors
-      return { products: [], total: 0 };
+      // Return bulk products fallback data when database offline (e.g. Render)
+      return this.getSampleProducts(filters);
     }
   }
 
@@ -231,9 +235,15 @@ class ProductRepository {
       logger.warn('ProductRepository.getById called with no ID');
       return null;
     }
+    const fallbackImages = this.getFallbackImages();
     try {
       const product = await db('products').where('external_id', id).first();
-      if (!product) return null;
+      if (!product) {
+          const samples = this.getSampleProducts().products;
+          const fallbackProd = samples.find(s => s.id === id || s.internal_id === id);
+          if (fallbackProd) return fallbackProd;
+          return null;
+      }
 
       const [images, variants, reviews, relatedProductsRaw] = await Promise.all([
         db('product_images').where('product_id', product.id),
@@ -242,17 +252,10 @@ class ProductRepository {
         db('products').where('category', product.category).whereNot('id', product.id).limit(4)
       ]);
 
-      // Fetch images for related products
       const relatedProductIds = relatedProductsRaw.map(p => p.id);
       const relatedImages = await db('product_images').whereIn('product_id', relatedProductIds).where('is_primary', true);
 
       const relatedProducts = relatedProductsRaw.map(p => {
-        const fallbackImages = [
-          'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400',
-          'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=400',
-          'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
-          'https://images.unsplash.com/photo-1539109132314-347596ad9cf2?auto=format&fit=crop&q=80&w=400'
-        ];
         const relatedImg = relatedImages.find(img => img.product_id === p.id);
         return {
           ...p,
@@ -263,14 +266,6 @@ class ProductRepository {
       });
 
       const primaryImage = images[0];
-
-      // Fallback images if no images in database
-      const fallbackImages = [
-        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&q=80&w=400',
-        'https://images.unsplash.com/photo-1539109132314-347596ad9cf2?auto=format&fit=crop&q=80&w=400'
-      ];
 
       return {
         ...product,
@@ -288,6 +283,9 @@ class ProductRepository {
       };
     } catch (err) {
       logger.error('Error in ProductRepository.getById', { error: err.message, id });
+      const samples = this.getSampleProducts().products;
+      const fallbackProd = samples.find(s => s.id === id || s.internal_id === id);
+      if (fallbackProd) return fallbackProd;
       throw err;
     }
   }
