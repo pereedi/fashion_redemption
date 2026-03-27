@@ -43,7 +43,16 @@ router.post('/register', async (req, res) => {
       password: hashedPassword
     });
 
+    if (!userId) {
+      throw new Error('Failed to create user account.');
+    }
+
     const newUser = await UserRepository.findById(userId);
+    if (!newUser) {
+      console.error('User created but findById returned null:', userId);
+      throw new Error('User account created but could not be retrieved. Please try logging in.');
+    }
+
     console.log('User created successfully:', userId);
     const token = signToken(userId);
 
@@ -131,6 +140,11 @@ router.post('/login', async (req, res) => {
 
     // Skip findById for fallback user to avoid DB call
     const fullUser = isFallbackUser ? user : await UserRepository.findById(user.id);
+    
+    if (!fullUser) {
+      console.error('Login: user.id exists but findById returned null:', user.id);
+      return res.status(401).json({ message: 'User account no longer exists or is inaccessible.' });
+    }
 
     res.status(200).json({
       status: 'success',
