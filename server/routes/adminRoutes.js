@@ -1,9 +1,13 @@
 import express from 'express';
+import db from '../config/db.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import ProductRepository from '../repositories/ProductRepository.js';
 import OrderRepository from '../repositories/OrderRepository.js';
 import UserRepository from '../repositories/UserRepository.js';
 import AnalyticsService from '../services/analyticsService.js';
+import Product from '../models/Product.js';
+import Order from '../models/Order.js';
+import User from '../models/User.js';
 
 const router = express.Router();
 
@@ -14,7 +18,7 @@ router.use(admin);
 // --- PRODUCTS ---
 router.get('/products', async (req, res) => {
   try {
-    const { products } = await ProductRepository.getAll({});
+    const { products } = await ProductRepository.getAll({ limit: 1000 });
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -24,7 +28,7 @@ router.get('/products', async (req, res) => {
 router.post('/products', async (req, res) => {
   try {
     const productId = await ProductRepository.create(req.body);
-    const createdProduct = await ProductRepository.getById(req.body.id || productId);
+    const createdProduct = await ProductRepository.getById(productId);
     res.status(201).json(createdProduct);
   } catch (error) {
     console.error('Error creating product:', error);
@@ -143,11 +147,14 @@ router.delete('/users/:id', async (req, res) => {
 // --- DASHBOARD ANALYTICS PREVIEW ---
 router.get('/dashboard-stats', async (req, res) => {
   try {
-    const [products, orders, users] = await Promise.all([
+    const [productsResult, orders, userCount] = await Promise.all([
       ProductRepository.getAll({ limit: 10000 }),
       OrderRepository.getAll(),
-      UserRepository.findById(1) // Dummy for count, we need a count all method
+      db('users').count('id as count').first()
     ]);
+
+    const products = productsResult.products || [];
+    const totalProducts = productsResult.total || 0;
 
     // For presentation, use DuckDB for some of these
     const totalRevenue = orders.reduce((acc, o) => acc + (o.status !== 'cancelled' ? parseFloat(o.total) : 0), 0);
@@ -156,12 +163,12 @@ router.get('/dashboard-stats', async (req, res) => {
     const recentOrders = orders.slice(0, 5);
 
     // Low stock snippet
-    const lowStockProducts = products.products.filter(p => p.stock <= 5).slice(0, 5);
+    const lowStockProducts = products.filter(p => p.stock <= 5).slice(0, 5);
 
     res.json({ 
-      totalProducts: products.total, 
+      totalProducts, 
       totalOrders: orders.length, 
-      totalUsers: 10, // Placeholder for now 
+      totalUsers: userCount?.count || 0, 
       totalRevenue, 
       recentOrders, 
       lowStockProducts 

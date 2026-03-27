@@ -62,7 +62,12 @@ router.post('/register', async (req, res) => {
     });
   } catch (err) {
     console.error('Registration error detailed:', err);
-    res.status(400).json({ message: err.message });
+    // Be more specific if it's a known error
+    let message = err.message;
+    if (err.code === 'ER_DUP_ENTRY') {
+      message = 'An account with this email already exists.';
+    }
+    res.status(400).json({ message });
   }
 });
 
