@@ -71,12 +71,21 @@ router.post('/register', async (req, res) => {
     });
   } catch (err) {
     console.error('Registration error detailed:', err);
-    // Be more specific if it's a known error
+    
+    // Check if it is a database connection/configuration error
+    const isDbError = err.code && (err.code.startsWith('ER_') || err.code === 'ECONNREFUSED' || err.code === 'PROTOCOL_CONNECTION_LOST');
+    
     let message = err.message;
+    let statusCode = 400;
+
     if (err.code === 'ER_DUP_ENTRY') {
       message = 'An account with this email already exists.';
+    } else if (isDbError) {
+      statusCode = 500;
+      message = 'Internal database error. Please check server logs or contact support.';
     }
-    res.status(400).json({ message });
+
+    res.status(statusCode).json({ message });
   }
 });
 
@@ -161,7 +170,19 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login error detailed:', err);
-    res.status(400).json({ message: err.message });
+    
+    // Check if it is a database connection/configuration error
+    const isDbError = err.code && (err.code.startsWith('ER_') || err.code === 'ECONNREFUSED' || err.code === 'PROTOCOL_CONNECTION_LOST');
+    
+    let message = err.message;
+    let statusCode = 400;
+    
+    if (isDbError) {
+      statusCode = 500;
+      message = 'Internal database error. Database may be unreachable.';
+    }
+    
+    res.status(statusCode).json({ message });
   }
 });
 

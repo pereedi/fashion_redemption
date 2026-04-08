@@ -91,6 +91,17 @@ app.post('/api/seed-products', async (req, res) => {
 app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
   console.log('Using MySQL (Transactional) and DuckDB (Analytics)');
+  
+  // Run Migrations in Production
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      console.log('Running database migrations...');
+      await db.migrate.latest();
+      console.log('Database migrations completed successfully.');
+    } catch (err) {
+      console.error('Database migration failed:', err.message);
+    }
+  }
 
   // Initialize Analytics
   try {
