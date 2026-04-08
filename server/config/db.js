@@ -13,7 +13,13 @@ db.raw('SELECT 1')
     logger.info(`MySQL (${environment}) connected successfully.`);
   })
   .catch((err) => {
-    logger.error('MySQL connection failed', { error: err.message });
+    logger.error('MySQL connection failed', { 
+      message: err.message,
+      code: err.code,
+      errno: err.errno,
+      sqlState: err.sqlState,
+      details: environment === 'production' ? 'Check your MYSQL_HOST/DATABASE_URL and SSL settings in Render.' : 'Is your local MySQL server running?'
+    });
   });
 
 export default db;

@@ -21,12 +21,12 @@ export default {
   },
   production: {
     client: 'mysql2',
-    connection: {
+    connection: process.env.DATABASE_URL || {
        host: process.env.MYSQL_HOST,
        user: process.env.MYSQL_USER,
        password: process.env.MYSQL_PASSWORD,
        database: process.env.MYSQL_DATABASE,
-       ssl: { rejectUnauthorized: false } // Common for AWS RDS
+       ssl: process.env.MYSQL_SSL === 'true' ? { rejectUnauthorized: false } : (process.env.MYSQL_HOST !== 'localhost' && process.env.MYSQL_HOST !== '127.0.0.1' ? { rejectUnauthorized: false } : false)
     },
     pool: {
       min: 2,
