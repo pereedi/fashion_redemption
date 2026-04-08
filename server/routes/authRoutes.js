@@ -26,8 +26,15 @@ router.post('/register', async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      console.log('Missing registration fields:', { name: !!name, email: !!email, password: !!password });
-      return res.status(400).json({ message: 'Please provide all required fields' });
+      const missing = [];
+      if (!name) missing.push('name');
+      if (!email) missing.push('email');
+      if (!password) missing.push('password');
+      
+      console.log('Registration failed: Missing fields', missing);
+      return res.status(400).json({ 
+        message: `Please provide all required fields. Missing: ${missing.join(', ')}` 
+      });
     }
 
     const existingUser = await UserRepository.findByEmail(email);
@@ -65,7 +72,7 @@ router.post('/register', async (req, res) => {
           name: newUser.name,
           email: newUser.email,
           role: newUser.role,
-          wishlist: newUser.wishlist
+          wishlist: newUser.wishlist || []
         }
       }
     });

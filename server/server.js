@@ -38,7 +38,33 @@ app.use((err, req, res, next) => {
 
 // Health Check
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Fashion Redemption Server is running on MySQL' });
+  res.status(200).json({ status: 'OK', message: 'Fashion Redemption Server is running' });
+});
+
+// Database Debug Endpoint (Production Diagnostic)
+app.get('/api/debug/db-status', async (req, res) => {
+  try {
+    const tables = await db.raw("SELECT table_name FROM information_schema.tables WHERE table_schema = (SELECT DATABASE())");
+    const userCount = await db('users').count('id as count').first();
+    const productCount = await db('products').count('id as count').first();
+    
+    res.json({
+      status: 'connected',
+      database: process.env.MYSQL_DATABASE,
+      tables: tables[0].map(t => t.TABLE_NAME || t.table_name),
+      counts: {
+        users: userCount.count,
+        products: productCount.count
+      }
+    });
+  } catch (err) {
+    console.error('Database debug error:', err);
+    res.status(500).json({
+      status: 'error',
+      message: err.message,
+      code: err.code
+    });
+  }
 });
 
 // Seed endpoint (call once to add products with Google Drive images)
