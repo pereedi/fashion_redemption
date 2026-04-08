@@ -62,7 +62,17 @@ app.get('/api/debug/db-status', async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: err.message,
-      code: err.code
+      code: err.code,
+      errno: err.errno,
+      sqlState: err.sqlState,
+      config: {
+        host: process.env.MYSQL_HOST,
+        user: process.env.MYSQL_USER,
+        database: process.env.MYSQL_DATABASE,
+        hasPassword: !!process.env.MYSQL_PASSWORD,
+        hasUrl: !!process.env.DATABASE_URL,
+        ssl: !!process.env.MYSQL_SSL
+      }
     });
   }
 });
