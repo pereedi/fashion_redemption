@@ -80,7 +80,10 @@ router.post('/register', async (req, res) => {
     console.error('Registration error detailed:', err);
     
     // Check if it is a database connection/configuration error
-    const isDbError = err.code && (err.code.startsWith('ER_') || err.code === 'ECONNREFUSED' || err.code === 'PROTOCOL_CONNECTION_LOST');
+    const dbErrKeywords = ['ECONNREFUSED', 'ETIMEDOUT', 'PROTOCOL_CONNECTION_LOST', 'ER_ACCESS_DENIED_ERROR', 'ENOTFOUND'];
+    const isDbError = (err.code && (err.code.startsWith('ER_') || dbErrKeywords.includes(err.code))) || 
+                     dbErrKeywords.some(kw => err.message?.includes(kw)) ||
+                     err.name === 'AggregateError';
     
     let message = err.message;
     let statusCode = 400;
@@ -89,7 +92,7 @@ router.post('/register', async (req, res) => {
       message = 'An account with this email already exists.';
     } else if (isDbError) {
       statusCode = 500;
-      message = 'Internal database error. Please check server logs or contact support.';
+      message = 'Database unreachable. Please ensure your database service is running and correctly configured.';
     }
 
     res.status(statusCode).json({ message });
@@ -179,14 +182,17 @@ router.post('/login', async (req, res) => {
     console.error('Login error detailed:', err);
     
     // Check if it is a database connection/configuration error
-    const isDbError = err.code && (err.code.startsWith('ER_') || err.code === 'ECONNREFUSED' || err.code === 'PROTOCOL_CONNECTION_LOST');
+    const dbErrKeywords = ['ECONNREFUSED', 'ETIMEDOUT', 'PROTOCOL_CONNECTION_LOST', 'ER_ACCESS_DENIED_ERROR', 'ENOTFOUND'];
+    const isDbError = (err.code && (err.code.startsWith('ER_') || dbErrKeywords.includes(err.code))) || 
+                     dbErrKeywords.some(kw => err.message?.includes(kw)) ||
+                     err.name === 'AggregateError';
     
     let message = err.message;
     let statusCode = 400;
     
     if (isDbError) {
       statusCode = 500;
-      message = 'Internal database error. Database may be unreachable.';
+      message = 'Database unreachable. Please check your database connection.';
     }
     
     res.status(statusCode).json({ message });

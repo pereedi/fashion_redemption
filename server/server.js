@@ -65,6 +65,7 @@ app.get('/api/debug/db-status', async (req, res) => {
       code: err.code,
       errno: err.errno,
       sqlState: err.sqlState,
+      stack: process.env.NODE_ENV === 'production' ? err.stack : undefined, // Useful for debugging production connection issues
       config: {
         host: process.env.MYSQL_HOST,
         user: process.env.MYSQL_USER,

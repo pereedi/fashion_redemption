@@ -94,6 +94,37 @@ class UserRepository {
       throw err;
     }
   }
+
+  async getAll() {
+    try {
+      const users = await db('users').select('id', 'name', 'email', 'role', 'created_at').orderBy('created_at', 'desc');
+      return users;
+    } catch (err) {
+      logger.error('Error in UserRepository.getAll', { error: err.message });
+      throw err;
+    }
+  }
+
+  async updateRole(id, role) {
+    try {
+      const updated = await db('users').where('id', id).update({ role });
+      if (!updated) return null;
+      return this.findById(id);
+    } catch (err) {
+      logger.error('Error in UserRepository.updateRole', { error: err.message, id, role });
+      throw err;
+    }
+  }
+
+  async delete(id) {
+    try {
+      const deleted = await db('users').where('id', id).del();
+      return !!deleted;
+    } catch (err) {
+      logger.error('Error in UserRepository.delete', { error: err.message, id });
+      throw err;
+    }
+  }
 }
 
 export default new UserRepository();

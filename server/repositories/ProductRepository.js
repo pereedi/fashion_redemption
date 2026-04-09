@@ -326,6 +326,71 @@ class ProductRepository {
       }
     });
   }
+
+  async update(id, data) {
+    const { images, variants, ...baseData } = data;
+    
+    return db.transaction(async (trx) => {
+      try {
+        // 1. Update base product
+        const updated = await trx('products').where('external_id', id).update(baseData);
+        if (!updated) {
+          // Try by id if external_id not found (for safety)
+          await trx('products').where('id', id).update(baseData);
+        }
+
+        const product = await trx('products').where('external_id', id).first() || await trx('products').where('id', id).first();
+        if (!product) return null;
+
+        // 2. Update images (simple approach: replace all)
+        if (images) {
+          await trx('product_images').where('product_id', product.id).del();
+          if (images.length > 0) {
+            await trx('product_images').insert(
+              images.map((url, index) => ({
+                product_id: product.id,
+                url,
+                is_primary: index === 0
+              }))
+            );
+          }
+        }
+
+        // 3. Update variants (simple approach: replace all)
+        if (variants) {
+          await trx('product_variants').where('product_id', product.id).del();
+          if (variants.length > 0) {
+            await trx('product_variants').insert(
+              variants.map(v => ({
+                product_id: product.id,
+                ...v
+              }))
+            );
+          }
+        }
+
+        return this.getById(id);
+      } catch (err) {
+        logger.error('Error in ProductRepository.update', { error: err.message, id });
+        throw err;
+      }
+    });
+  }
+
+  async delete(id) {
+    try {
+      const product = await db('products').where('external_id', id).first() || await db('products').where('id', id).first();
+      if (!product) return false;
+
+      // Knex handles cascading if migrations are set up, but let's be explicit if needed
+      // Actually, let's just delete the product and let MySQL handles foreign keys if set to CASCADE
+      const deleted = await db('products').where('id', product.id).del();
+      return !!deleted;
+    } catch (err) {
+      logger.error('Error in ProductRepository.delete', { error: err.message, id });
+      throw err;
+    }
+  }
 }
 
 export default new ProductRepository();

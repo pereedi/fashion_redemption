@@ -5,9 +5,6 @@ import ProductRepository from '../repositories/ProductRepository.js';
 import OrderRepository from '../repositories/OrderRepository.js';
 import UserRepository from '../repositories/UserRepository.js';
 import AnalyticsService from '../services/analyticsService.js';
-import Product from '../models/Product.js';
-import Order from '../models/Order.js';
-import User from '../models/User.js';
 
 const router = express.Router();
 
@@ -38,16 +35,8 @@ router.post('/products', async (req, res) => {
 
 router.put('/products/:id', async (req, res) => {
   try {
-    // using findOneAndUpdate because id could be string ID or object ID. Let's do object id or string id carefully.
-    // Assuming params.id is the unique string `id` or `_id`
-    let product = await Product.findById(req.params.id);
-    if (!product) {
-       product = await Product.findOne({ id: req.params.id });
-    }
-
-    if (product) {
-      Object.assign(product, req.body);
-      const updatedProduct = await product.save();
+    const updatedProduct = await ProductRepository.update(req.params.id, req.body);
+    if (updatedProduct) {
       res.json(updatedProduct);
     } else {
       res.status(404).json({ message: 'Product not found' });
@@ -59,13 +48,8 @@ router.put('/products/:id', async (req, res) => {
 
 router.delete('/products/:id', async (req, res) => {
   try {
-    let product = await Product.findByIdAndDelete(req.params.id);
-    if (!product) {
-      // Also try string id
-      product = await Product.findOneAndDelete({ id: req.params.id });
-    }
-    
-    if (product) {
+    const success = await ProductRepository.delete(req.params.id);
+    if (success) {
       res.json({ message: 'Product removed' });
     } else {
       res.status(404).json({ message: 'Product not found' });
@@ -78,7 +62,7 @@ router.delete('/products/:id', async (req, res) => {
 // --- ORDERS ---
 router.get('/orders', async (req, res) => {
   try {
-    const orders = await Order.find({}).populate('user', 'name email').sort({ createdAt: -1 });
+    const orders = await OrderRepository.getAll();
     res.json(orders);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -87,10 +71,8 @@ router.get('/orders', async (req, res) => {
 
 router.put('/orders/:id/status', async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
-    if (order) {
-      order.status = req.body.status;
-      const updatedOrder = await order.save();
+    const updatedOrder = await OrderRepository.updateStatus(req.params.id, req.body.status);
+    if (updatedOrder) {
       res.json(updatedOrder);
     } else {
       res.status(404).json({ message: 'Order not found' });
@@ -103,7 +85,7 @@ router.put('/orders/:id/status', async (req, res) => {
 // --- USERS ---
 router.get('/users', async (req, res) => {
   try {
-    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    const users = await UserRepository.getAll();
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -112,17 +94,9 @@ router.get('/users', async (req, res) => {
 
 router.put('/users/:id/role', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (user) {
-      user.role = req.body.role || user.role;
-      const updatedUser = await user.save();
-      
-      res.json({
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role
-      });
+    const updatedUser = await UserRepository.updateRole(req.params.id, req.body.role);
+    if (updatedUser) {
+      res.json(updatedUser);
     } else {
       res.status(404).json({ message: 'User not found' });
     }
@@ -133,8 +107,8 @@ router.put('/users/:id/role', async (req, res) => {
 
 router.delete('/users/:id', async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (user) {
+    const success = await UserRepository.delete(req.params.id);
+    if (success) {
       res.json({ message: 'User removed' });
     } else {
       res.status(404).json({ message: 'User not found' });

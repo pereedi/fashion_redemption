@@ -99,6 +99,17 @@ class OrderRepository {
       }
     });
   }
+
+  async updateStatus(id, status) {
+    try {
+      const updated = await db('orders').where('id', id).update({ status });
+      if (!updated) return null;
+      return this.getById(id);
+    } catch (err) {
+      logger.error('Error in OrderRepository.updateStatus', { error: err.message, id, status });
+      throw err;
+    }
+  }
 }
 
 export default new OrderRepository();
