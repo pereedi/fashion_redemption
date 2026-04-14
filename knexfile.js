@@ -1,11 +1,26 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+const sanitizeHost = (host) => {
+  if (!host) return host;
+  // Remove http://, https:// and trailing slashes
+  return host.replace(/^https?:\/\//, '').replace(/\/$/, '');
+};
+
+const commonConfig = {
+  client: 'mysql2',
+  migrations: {
+    directory: './server/migrations',
+    tableName: 'knex_migrations'
+  }
+};
+
 export default {
   development: {
-    client: 'mysql2',
+    ...commonConfig,
     connection: {
-      host: process.env.MYSQL_HOST || '127.0.0.1',
+      host: sanitizeHost(process.env.MYSQL_HOST) || '127.0.0.1',
+      port: process.env.MYSQL_PORT || 3306,
       user: process.env.MYSQL_USER || 'root',
       password: process.env.MYSQL_PASSWORD || '',
       database: process.env.MYSQL_DATABASE || 'redemption'
@@ -13,16 +28,13 @@ export default {
     pool: {
       min: 2,
       max: 10
-    },
-    migrations: {
-      directory: './server/migrations',
-      tableName: 'knex_migrations'
     }
   },
   production: {
-    client: 'mysql2',
+    ...commonConfig,
     connection: process.env.DATABASE_URL || {
-       host: process.env.MYSQL_HOST,
+       host: sanitizeHost(process.env.MYSQL_HOST),
+       port: process.env.MYSQL_PORT || (process.env.MYSQL_HOST?.includes('aivencloud.com') ? 20894 : 3306),
        user: process.env.MYSQL_USER,
        password: process.env.MYSQL_PASSWORD,
        database: process.env.MYSQL_DATABASE,
@@ -31,10 +43,6 @@ export default {
     pool: {
       min: 2,
       max: 20
-    },
-    migrations: {
-      directory: './server/migrations',
-      tableName: 'knex_migrations'
     }
   }
 };
