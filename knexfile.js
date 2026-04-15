@@ -4,8 +4,9 @@ dotenv.config();
 const sanitizeParam = (param) => {
   if (!param) return param;
   if (typeof param !== 'string') return param;
-  // Remove all whitespace, newlines, and carriage returns
-  let clean = param.trim().replace(/[\n\r]/g, '');
+  // REMOVE ALL non-printable characters and all whitespace
+  // This regex matches anything that is NOT a space, digit, letter, or standard symbol
+  let clean = param.replace(/[^\x20-\x7E]/g, '').trim();
   // Specifically for hosts: remove http:// or https:// and trailing slashes
   clean = clean.replace(/^https?:\/\//, '').replace(/\/$/, '');
   return clean;

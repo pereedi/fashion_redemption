@@ -67,15 +67,14 @@ app.get('/api/debug/db-status', async (req, res) => {
       sqlState: err.sqlState,
       stack: process.env.NODE_ENV === 'production' ? err.stack : undefined, // Useful for debugging production connection issues
       config: {
-        version: '1.2.0-aiven-fix',
-        connection: process.env.DATABASE_URL || {
-          host: process.env.MYSQL_HOST,
-          port: process.env.MYSQL_PORT || (process.env.MYSQL_HOST?.includes('aivencloud.com') ? 20894 : 3306),
-          user: process.env.MYSQL_USER,
-          password: process.env.MYSQL_PASSWORD,
-          database: process.env.MYSQL_DATABASE,
-          ssl: process.env.MYSQL_SSL === 'true' ? { rejectUnauthorized: false } : (process.env.MYSQL_HOST !== 'localhost' && process.env.MYSQL_HOST !== '127.0.0.1' ? { rejectUnauthorized: false } : false)
-        }
+        version: '1.3.0-diagnostic-lengths',
+        host: { value: process.env.MYSQL_HOST, len: (process.env.MYSQL_HOST || '').length },
+        port: { value: process.env.MYSQL_PORT, len: (process.env.MYSQL_PORT || '').length },
+        user: { value: process.env.MYSQL_USER, len: (process.env.MYSQL_USER || '').length },
+        database: { value: process.env.MYSQL_DATABASE, len: (process.env.MYSQL_DATABASE || '').length },
+        hasPassword: !!process.env.MYSQL_PASSWORD,
+        hasUrl: !!process.env.DATABASE_URL,
+        ssl: !!process.env.MYSQL_SSL
       }
     });
   }
