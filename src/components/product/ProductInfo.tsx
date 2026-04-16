@@ -22,17 +22,24 @@ interface ProductInfoProps {
     };
 }
 
-const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
-    const [selectedSize, setSelectedSize] = useState('S');
+const ProductInfo: React.FC<ProductInfoProps> = ({ product: anyProduct }) => {
+    const product = anyProduct;
+    const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || 'S');
     const { toggleWishlist, isInWishlist } = useWishlist();
     const { addToCart } = useCart();
     const isWishlisted = isInWishlist(String(product.id));
+
+    // Calculate stock for selected size
+    const currentVariant = product.variants?.find((v: any) => v.size === selectedSize);
+    const currentStock = currentVariant ? currentVariant.stock : (product.variants?.length > 0 ? 0 : product.stock);
+    const isOutOfStock = currentStock === 0;
 
     const handleToggleWishlist = () => {
         toggleWishlist(String(product.id));
     };
 
     const handleAddToCart = () => {
+        if (isOutOfStock) return;
         addToCart({
             id: product.id,
             name: product.name,
@@ -51,15 +58,15 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
         },
         {
             title: "Materials & Care",
-            content: "Hand-crafted from premium 100% Italian mulberry silk. Dry clean only. Iron on low heat if necessary. Handle with care."
+            content: "Hand-crafted from premium materials. Dry clean only. Iron on low heat if necessary. Handle with care."
         }
-    ];
+      ];
 
     return (
         <div className="flex flex-col gap-8">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase">
-                <span>EVENING WEAR</span>
+                <span>{product.type || 'COLLECTION'}</span>
                 <span className="text-black/20">/</span>
                 <span className="text-black/80">{product.category}</span>
             </div>
@@ -90,29 +97,39 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
             </p>
 
             {/* Size Selection */}
-            <SizeSelector
-                sizes={product.sizes}
-                selectedSize={selectedSize}
-                onSelect={setSelectedSize}
-            />
-
-            {/* Stock Indicator */}
-            {product.stock <= 5 && (
-                <div className="flex items-center gap-2 text-[10px] font-bold text-luxury-red tracking-widest uppercase">
-                    <div className="w-1.5 h-1.5 bg-luxury-red rounded-full animate-pulse" />
-                    Only {product.stock} left in stock
+            <div className="space-y-4">
+                <SizeSelector
+                    sizes={product.sizes}
+                    selectedSize={selectedSize}
+                    onSelect={setSelectedSize}
+                />
+                
+                {/* Stock Indicator per Size */}
+                <div className="h-6">
+                    {isOutOfStock ? (
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-luxury-red tracking-[0.2em] uppercase">
+                            <X size={12} strokeWidth={3} />
+                            Out of Stock in Size {selectedSize}
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-green-600 tracking-[0.2em] uppercase">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                            {currentStock} Remaining in Size {selectedSize}
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-4 mt-4">
+            <div className="flex flex-col gap-4">
                 <Button 
                     variant="primary" 
                     onClick={handleAddToCart}
-                    className="!w-full !py-5 !rounded-none flex items-center justify-center gap-3 font-bold tracking-[0.3em] text-[10px]"
+                    disabled={isOutOfStock}
+                    className={`!w-full !py-5 !rounded-none flex items-center justify-center gap-3 font-bold tracking-[0.3em] text-[10px] ${isOutOfStock ? 'opacity-50 !cursor-not-allowed grayscale' : ''}`}
                 >
                     <ShoppingBag size={18} strokeWidth={2.5} />
-                    ADD TO BAG
+                    {isOutOfStock ? 'OUT OF STOCK' : 'ADD TO BAG'}
                 </Button>
                 <button
                     onClick={handleToggleWishlist}

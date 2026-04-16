@@ -292,6 +292,12 @@ class ProductRepository {
 
   async create(productData) {
     const { images, variants, ...baseData } = productData;
+    
+    // Map basePrice to base_price if needed
+    if (baseData.basePrice !== undefined) {
+      baseData.base_price = baseData.basePrice;
+      delete baseData.basePrice;
+    }
 
     return db.transaction(async (trx) => {
       try {
@@ -329,6 +335,12 @@ class ProductRepository {
 
   async update(id, data) {
     const { images, variants, ...baseData } = data;
+    
+    // Map basePrice to base_price if needed
+    if (baseData.basePrice !== undefined) {
+      baseData.base_price = baseData.basePrice;
+      delete baseData.basePrice;
+    }
     
     return db.transaction(async (trx) => {
       try {

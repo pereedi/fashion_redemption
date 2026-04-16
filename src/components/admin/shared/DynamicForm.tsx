@@ -21,55 +21,47 @@ export interface FormField {
 interface DynamicFormProps {
   fields: FormField[];
   initialData?: any;
+  onChange?: (data: any) => void;
   onSubmit: (data: any) => void;
   onCancel: () => void;
   submitLabel?: string;
   isLoading?: boolean;
+  extension?: React.ReactNode;
 }
 
 export const DynamicForm: React.FC<DynamicFormProps> = ({ 
   fields, 
   initialData, 
+  onChange,
   onSubmit, 
   onCancel,
   submitLabel = 'Save',
-  isLoading = false
+  isLoading = false,
+  extension
 }) => {
   const [formData, setFormData] = useState<any>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
-    } else {
-      // Initialize empty form
-      const emptyData: any = {};
-      fields.forEach(field => {
-        if (field.type === 'checkbox') {
-          emptyData[field.name] = false;
-        } else if (field.multiple) {
-          emptyData[field.name] = [];
-        } else {
-          emptyData[field.name] = '';
-        }
-      });
-      setFormData(emptyData);
+      setFormData(prev => ({ ...prev, ...initialData }));
     }
-  }, [initialData, fields]);
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
+    let newValue: any = value;
     
     if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData({ ...formData, [name]: checked });
+      newValue = (e.target as HTMLInputElement).checked;
     } else if (type === 'select-multiple') {
       const options = (e.target as HTMLSelectElement).selectedOptions;
-      const values = Array.from(options).map(opt => opt.value);
-      setFormData({ ...formData, [name]: values });
-    } else {
-      setFormData({ ...formData, [name]: value });
+      newValue = Array.from(options).map(opt => opt.value);
     }
+    
+    const updatedData = { ...formData, [name]: newValue };
+    setFormData(updatedData);
+    if (onChange) onChange(updatedData);
 
     // Clear error
     if (errors[name]) {
@@ -214,6 +206,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
           );
         })}
       </div>
+      
+      {extension && <div className="animate-fade-in">{extension}</div>}
 
       <div className="flex items-center justify-end gap-6 pt-10 border-t border-gray-100">
         <button

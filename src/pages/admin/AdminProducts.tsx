@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { DataTable, type Column } from '../../components/admin/shared/DataTable';
 import { DynamicForm, type FormField } from '../../components/admin/shared/DynamicForm';
+import VariantEditor, { type Variant } from '../../components/admin/ProductEditor/VariantEditor';
 import { Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CATEGORY_MAP, ALL_CATEGORIES } from '../../config/categoryMapping';
 import API_BASE_URL from '../../config/api';
 
 const AdminProducts = () => {
@@ -15,6 +17,10 @@ const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form Extension State
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [variants, setVariants] = useState<Variant[]>([]);
 
   const fetchProducts = async () => {
     try {
@@ -57,11 +63,15 @@ const AdminProducts = () => {
 
   const handleEdit = (row: any) => {
     setEditingProduct(row);
+    setSelectedCategory(row.category || '');
+    setVariants(row.variants || []);
     setIsModalOpen(true);
   };
 
   const handleAdd = () => {
     setEditingProduct(null);
+    setSelectedCategory('');
+    setVariants([]);
     setIsModalOpen(true);
   };
 
@@ -74,13 +84,11 @@ const AdminProducts = () => {
       
       const method = editingProduct ? 'PUT' : 'POST';
       
-      // Basic formatting for arrays
-      if (typeof formData.sizes === 'string') {
-        formData.sizes = formData.sizes.split(',').map((s: string) => s.trim());
-      }
-      if (typeof formData.colors === 'string') {
-        formData.colors = formData.colors.split(',').map((c: string) => c.trim());
-      }
+      // Combine form data with managed variants
+      const finalData = {
+        ...formData,
+        variants: variants
+      };
 
       const res = await fetch(url, {
         method,
@@ -88,7 +96,7 @@ const AdminProducts = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(finalData)
       });
 
       if (res.ok) {
@@ -119,19 +127,38 @@ const AdminProducts = () => {
     },
     { header: 'ID', accessorKey: 'id' },
     { header: 'Name', accessorKey: 'name' },
-    { header: 'Category', cell: (row: any) => <span className="capitalize">{row.category}</span> },
-    { header: 'Type', cell: (row: any) => <span className="capitalize">{row.type}</span> },
-    { header: 'Price', cell: (row: any) => `$${Number(row.price).toFixed(2)}` },
     { 
-      header: 'Stock', 
+      header: 'Category', 
       cell: (row: any) => (
-        <span className={`px-2 py-1 text-xs font-bold rounded-md ${
-          row.stock === 0 ? 'bg-red-100 text-luxury-red' : 
-          row.stock < 10 ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
-        }`}>
-          {row.stock}
-        </span>
-      )
+        <div className="flex flex-col">
+          <span className="capitalize font-medium">{row.category}</span>
+          <span className="text-[10px] text-gray-500 uppercase tracking-tighter">{row.type}</span>
+        </div>
+      ) 
+    },
+    { header: 'Price', cell: (row: any) => `Esp ${Number(row.basePrice).toLocaleString()}` },
+    { 
+      header: 'Stock Status', 
+      cell: (row: any) => {
+        const totalStock = row.variants?.reduce((acc: number, v: any) => acc + v.stock, 0) || row.stock || 0;
+        return (
+          <div className="flex flex-col gap-1">
+            <span className={`px-2 py-0.5 text-[10px] font-bold rounded w-fit ${
+              totalStock === 0 ? 'bg-red-100 text-luxury-red' : 
+              totalStock < 10 ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
+            }`}>
+              {totalStock} TOTAL
+            </span>
+            <div className="flex flex-wrap gap-1">
+              {row.variants?.map((v: any, i: number) => (
+                <span key={i} className="text-[8px] bg-gray-100 px-1 rounded text-gray-600">
+                  {v.size}: {v.stock}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      }
     }
   ];
 
@@ -140,44 +167,31 @@ const AdminProducts = () => {
     { icon: 'delete' as const, onClick: handleDelete }
   ];
 
-  const formFields: FormField[] = [
-    { name: 'basic_info', label: 'Basic Information', type: 'section' },
-    { name: 'name', label: 'Product Name', type: 'text', required: true },
+  const formFields: FormField[] = useMemo(() => [
+    { name: 'basic_info', label: 'Product Basics', type: 'section' },
+    { name: 'name', label: 'Name', type: 'text', required: true },
     { name: 'description', label: 'Description', type: 'textarea', required: true },
     
-    { name: 'classification', label: 'Classification', type: 'section' },
+    { name: 'classification', label: 'Categorization', type: 'section' },
     { 
       name: 'category', 
-      label: 'Category', 
+      label: 'Main Category', 
       type: 'select', 
       required: true,
-      options: [
-        { label: 'Men', value: 'men' },
-        { label: 'Women', value: 'women' },
-        { label: 'Kids', value: 'kids' }
-      ]
+      options: ALL_CATEGORIES
     },
     { 
       name: 'type', 
-      label: 'Product Type', 
+      label: 'Sub-Category / Type', 
       type: 'select', 
       required: true,
-      options: [
-        { label: 'Clothing', value: 'clothing' },
-        { label: 'Accessories', value: 'accessories' },
-        { label: 'Shoes', value: 'shoes' }
-      ]
+      options: selectedCategory ? CATEGORY_MAP[selectedCategory]?.types || [] : []
     },
 
-    { name: 'variants_info', label: 'Variants & Inventory', type: 'section' },
-    { name: 'sizes', label: 'Sizes', type: 'text', placeholder: 'S, M, L, XL', required: true },
-    { name: 'colors', label: 'Colors', type: 'text', placeholder: 'Black, White, Red', required: true },
-    { name: 'stock', label: 'Stock Quantity', type: 'number', required: true },
-
-    { name: 'pricing_media', label: 'Pricing & Media', type: 'section' },
-    { name: 'price', label: 'Price (Esp)', type: 'number', required: true, prefix: 'Esp' },
-    { name: 'images', label: 'Product Images', type: 'file', multiple: true, required: !editingProduct }
-  ];
+    { name: 'pricing_media', label: 'Pricing & Images', type: 'section' },
+    { name: 'basePrice', label: 'Price (Esp)', type: 'number', required: true, prefix: 'Esp' },
+    { name: 'images', label: 'Images (URLs)', type: 'file', multiple: true, required: !editingProduct }
+  ], [selectedCategory, editingProduct]);
 
   if (loading) return (
     <div className="flex justify-center items-center h-64">
@@ -231,18 +245,33 @@ const AdminProducts = () => {
               </div>
               
               <div className="px-10 py-12 flex-1 scrollbar-hide">
-                <DynamicForm 
-                  fields={formFields} 
-                  initialData={editingProduct ? {
-                    ...editingProduct,
-                    sizes: editingProduct.sizes?.join(', '),
-                    colors: editingProduct.colors?.join(', ')
-                  } : undefined}
-                  onSubmit={handleSubmit}
-                  onCancel={() => setIsModalOpen(false)}
-                  submitLabel={editingProduct ? 'Update Product' : 'Create Product'}
-                  isLoading={isSubmitting}
-                />
+                <div className="mb-10">
+                  <DynamicForm 
+                    fields={formFields} 
+                    initialData={editingProduct ? {
+                      ...editingProduct,
+                      basePrice: editingProduct.basePrice || editingProduct.base_price
+                    } : { category: selectedCategory }}
+                    onChange={(data) => {
+                      if (data.category !== selectedCategory) {
+                        setSelectedCategory(data.category);
+                      }
+                    }}
+                    onSubmit={handleSubmit}
+                    onCancel={() => setIsModalOpen(false)}
+                    submitLabel={editingProduct ? 'Update Product' : 'Create Product'}
+                    isLoading={isSubmitting}
+                    // Custom Footer/Extension
+                    extension={
+                      <div className="mt-12">
+                        <VariantEditor 
+                          variants={variants} 
+                          onChange={setVariants} 
+                        />
+                      </div>
+                    }
+                  />
+                </div>
               </div>
             </motion.div>
           </div>

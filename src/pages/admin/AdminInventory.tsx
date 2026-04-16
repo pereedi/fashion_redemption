@@ -73,20 +73,31 @@ const AdminInventory = () => {
   };
 
   const columns: Column<any>[] = [
-    { header: 'ID', accessorKey: 'id' },
-    { header: 'Product Name', cell: (row) => <span className="font-medium">{row.name}</span> },
-    { header: 'Category', cell: (row: any) => <span className="capitalize">{row.category} / {row.type}</span> },
-    { header: 'Price', cell: (row: any) => `$${Number(row.price).toFixed(2)}` },
     { 
-      header: 'Stock Level', 
-      cell: (row: any) => (
-        <span className={`px-3 py-1 text-xs font-bold rounded-full border ${
-          row.stock === 0 ? 'bg-red-50 text-luxury-red border-red-200 animate-pulse' : 
-          row.stock < 10 ? 'bg-orange-50 text-orange-800 border-orange-200' : 'bg-green-50 text-green-800 border-green-200'
-        }`}>
-          {row.stock} in stock
-        </span>
-      )
+      header: 'Detailed Stock Status', 
+      cell: (row: any) => {
+        const totalStock = row.variants?.reduce((acc: number, v: any) => acc + v.stock, 0) || row.stock || 0;
+        return (
+          <div className="flex flex-col gap-2">
+            <span className={`px-3 py-1 text-[10px] font-bold rounded-full w-fit border ${
+              totalStock === 0 ? 'bg-red-50 text-luxury-red border-red-200 animate-pulse' : 
+              totalStock < 10 ? 'bg-orange-50 text-orange-800 border-orange-200' : 'bg-green-50 text-green-800 border-green-200'
+            }`}>
+              {totalStock} TOTAL
+            </span>
+            {row.variants && row.variants.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {row.variants.map((v: any, i: number) => (
+                  <div key={i} className="flex flex-col items-center bg-white border border-gray-100 px-2 py-1 rounded min-w-[32px]">
+                    <span className="text-[8px] font-bold text-gray-400 leading-none mb-1">{v.size}</span>
+                    <span className={`text-[10px] font-bold ${v.stock === 0 ? 'text-luxury-red' : 'text-black'}`}>{v.stock}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
     }
   ];
 
