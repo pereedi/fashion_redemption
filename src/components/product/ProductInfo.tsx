@@ -33,7 +33,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product: anyProduct }) => {
 
     // Calculate stock for selected size
     const currentVariant = product.variants?.find((v: any) => v.size === selectedSize);
-    const currentStock = currentVariant ? currentVariant.stock : (product.variants?.length > 0 ? 0 : product.stock);
+    const currentStock = currentVariant ? currentVariant.stock : ((product.variants?.length || 0) > 0 ? 0 : product.stock);
     const isOutOfStock = currentStock === 0;
 
     const handleToggleWishlist = () => {
