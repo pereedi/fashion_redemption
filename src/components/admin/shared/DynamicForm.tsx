@@ -44,7 +44,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
 
   useEffect(() => {
     if (initialData) {
-      setFormData(prev => ({ ...prev, ...initialData }));
+      setFormData((prev: any) => ({ ...prev, ...initialData }));
     }
   }, [initialData]);
 

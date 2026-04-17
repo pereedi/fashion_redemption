@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Heart, ShoppingBag } from 'lucide-react';
+import { Star, Heart, ShoppingBag, X } from 'lucide-react';
 import SizeSelector from './SizeSelector';
 import ProductAccordion from './ProductAccordion';
 import Button from '../ui/Button';
@@ -13,12 +13,14 @@ interface ProductInfoProps {
         price: string;
         basePrice: number;
         category: string;
+        type?: string;
         rating: number;
         reviewCount: number;
         description: string;
         sizes: string[];
         stock: number;
         image: string;
+        variants?: any[];
     };
 }
 
