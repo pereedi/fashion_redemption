@@ -37,7 +37,7 @@ const AdminUsers = () => {
   }, [token]);
 
   const handleDelete = async (row: any) => {
-    if (row._id === currentUser?.id) {
+    if (row.id === currentUser?.id) {
       alert("You cannot delete your own admin account.");
       return;
     }
@@ -45,7 +45,7 @@ const AdminUsers = () => {
     if (!window.confirm(`Are you sure you want to delete user ${row.name}?`)) return;
     
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/users/${row._id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/users/${row.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -60,7 +60,7 @@ const AdminUsers = () => {
   };
 
   const handleEdit = (row: any) => {
-    if (row._id === currentUser?.id) {
+    if (row.id === currentUser?.id) {
       alert("You cannot change your own role here.");
       return;
     }
@@ -73,7 +73,7 @@ const AdminUsers = () => {
     
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/users/${editingUser._id}/role`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/users/${editingUser.id}/role`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -139,6 +139,17 @@ const AdminUsers = () => {
     }
   ];
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery) return users;
+    const lowerQuery = searchQuery.toLowerCase();
+    return users.filter(u => 
+      u.name.toLowerCase().includes(lowerQuery) || 
+      u.email?.toLowerCase().includes(lowerQuery)
+    );
+  }, [users, searchQuery]);
+
   if (loading) return (
     <div className="flex justify-center items-center h-64">
       <div className="w-8 h-8 border-2 border-luxury-red border-t-transparent rounded-full animate-spin"></div>
@@ -148,17 +159,28 @@ const AdminUsers = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-serif font-bold tracking-tight uppercase">Users</h1>
           <p className="text-sm text-gray-500">Manage customer accounts and admin access.</p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative w-full sm:w-64">
+          <input 
+            type="text"
+            placeholder="Search users..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-10 px-4 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:border-luxury-red transition-all"
+          />
         </div>
       </div>
 
       <DataTable 
-        data={users} 
+        data={filteredUsers} 
         columns={columns} 
         actions={actions} 
-        keyExtractor={(row) => row._id} 
+        keyExtractor={(row) => row.id} 
       />
 
       {/* Modal */}

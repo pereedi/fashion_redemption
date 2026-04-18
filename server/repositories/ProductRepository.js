@@ -119,7 +119,7 @@ class ProductRepository {
     }
 
     try {
-      // Build base query without complex join conditions to avoid SQL errors
+      // Build base query
       let query = db('products').select('products.*');
 
       // Apply category filter (case-insensitive)
@@ -177,9 +177,9 @@ class ProductRepository {
 
       const total = countResult?.total || 0;
 
-      // If no products in database, return sample products for demo
+      // REMOVED AUTOMATIC FALLBACK: Give user total control over their catalog
       if (products.length === 0) {
-        return this.getSampleProducts(filters);
+        return { products: [], total: 0 };
       }
 
       // Fetch all images and variants for these products
@@ -198,7 +198,6 @@ class ProductRepository {
 
         const getImageUrl = () => {
           if (primaryImage?.url) return primaryImage.url;
-          // Use fallback based on product id
           return fallbackImages[Number(p.id) % fallbackImages.length] || fallbackImages[0];
         };
 
@@ -206,6 +205,8 @@ class ProductRepository {
           if (productImages.length > 0) return productImages.map(img => img.url);
           return fallbackImages;
         };
+
+        const productVariants = variants.filter(v => Number(v.product_id) === Number(p.id));
 
         return {
           ...p,
@@ -215,18 +216,17 @@ class ProductRepository {
           price: `Esp ${Number(p.base_price).toLocaleString()}`,
           image: getImageUrl(),
           images: getAllImages(),
-          variants: variants.filter(v => Number(v.product_id) === Number(p.id)),
-          sizes: [...new Set(variants.filter(v => Number(v.product_id) === Number(p.id)).map(v => v.size))],
-          colors: [...new Set(variants.filter(v => Number(v.product_id) === Number(p.id)).map(v => v.color))],
-          stock: variants.filter(v => Number(v.product_id) === Number(p.id)).reduce((acc, v) => acc + (v.stock || 0), 0)
+          variants: productVariants,
+          sizes: [...new Set(productVariants.map(v => v.size))],
+          colors: [...new Set(productVariants.filter(v => v.color).map(v => v.color))],
+          stock: productVariants.reduce((acc, v) => acc + (v.stock || 0), 0)
         };
       });
 
       return { products: mappedProducts, total };
     } catch (err) {
       logger.error('Error in ProductRepository.getAll', { error: err.message, filters, stack: err.stack });
-      // Return bulk products fallback data when database offline (e.g. Render)
-      return this.getSampleProducts(filters);
+      return { products: [], total: 0 };
     }
   }
 

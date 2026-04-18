@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Star, Heart, ShoppingBag, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Star, Heart, ShoppingBag, X, Check } from 'lucide-react';
 import SizeSelector from './SizeSelector';
+import ColorSelector from './ColorSelector';
 import ProductAccordion from './ProductAccordion';
 import Button from '../ui/Button';
 import { useWishlist } from '../../context/WishlistContext';
@@ -18,6 +19,7 @@ interface ProductInfoProps {
         reviewCount: number;
         description: string;
         sizes: string[];
+        colors: string[];
         stock: number;
         image: string;
         variants?: any[];
@@ -26,15 +28,34 @@ interface ProductInfoProps {
 
 const ProductInfo: React.FC<ProductInfoProps> = ({ product: anyProduct }) => {
     const product = anyProduct;
-    const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || 'S');
+    const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || '');
+    const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || '');
+    
     const { toggleWishlist, isInWishlist } = useWishlist();
     const { addToCart } = useCart();
     const isWishlisted = isInWishlist(String(product.id));
 
-    // Calculate stock for selected size
-    const currentVariant = product.variants?.find((v: any) => v.size === selectedSize);
-    const currentStock = currentVariant ? currentVariant.stock : ((product.variants?.length || 0) > 0 ? 0 : product.stock);
-    const isOutOfStock = currentStock === 0;
+    // Calculate stock for specific variant combination
+    const { currentStock, isOutOfStock } = useMemo(() => {
+        // If there are no variants, use base product stock
+        if (!product.variants || product.variants.length === 0) {
+            return { currentStock: product.stock, isOutOfStock: product.stock === 0 };
+        }
+
+        // Find variant matching BOTH size and (if applicable) color
+        const variant = product.variants.find(v => {
+            const sizeMatch = !selectedSize || v.size === selectedSize;
+            const colorMatch = !selectedColor || v.color === selectedColor;
+            return sizeMatch && colorMatch;
+        });
+
+        if (variant) {
+            return { currentStock: variant.stock, isOutOfStock: variant.stock === 0 };
+        }
+
+        // If a specific combination doesn't exist but variants do, it's out of stock for that combo
+        return { currentStock: 0, isOutOfStock: true };
+    }, [product.variants, product.stock, selectedSize, selectedColor]);
 
     const handleToggleWishlist = () => {
         toggleWishlist(String(product.id));
@@ -49,6 +70,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product: anyProduct }) => {
             basePrice: product.basePrice,
             image: product.image,
             size: selectedSize,
+            color: selectedColor,
             quantity: 1
         });
     };
@@ -65,7 +87,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product: anyProduct }) => {
       ];
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-10">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase">
                 <span>{product.type || 'COLLECTION'}</span>
@@ -93,34 +115,46 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product: anyProduct }) => {
                 </div>
             </div>
 
-            {/* Description */}
-            <p className="text-xs text-black/60 leading-relaxed font-medium max-w-lg">
-                {product.description}
-            </p>
+            {/* Selection Area */}
+            <div className="space-y-10 py-6 border-y border-gray-100">
+                {product.colors && product.colors.length > 1 && (
+                    <ColorSelector
+                        colors={product.colors}
+                        selectedColor={selectedColor}
+                        onSelect={setSelectedColor}
+                    />
+                )}
 
-            {/* Size Selection */}
-            <div className="space-y-4">
                 <SizeSelector
                     sizes={product.sizes}
                     selectedSize={selectedSize}
                     onSelect={setSelectedSize}
                 />
                 
-                {/* Stock Indicator per Size */}
-                <div className="h-6">
+                {/* Visual Status Indicator */}
+                <div className="flex items-center gap-3">
                     {isOutOfStock ? (
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-luxury-red tracking-[0.2em] uppercase">
-                            <X size={12} strokeWidth={3} />
-                            Out of Stock in Size {selectedSize}
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-luxury-red rounded border border-red-100 text-[10px] font-bold tracking-[0.1em] uppercase animate-pulse">
+                            <X size={14} />
+                            Currently Unavailable
                         </div>
                     ) : (
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-green-600 tracking-[0.2em] uppercase">
-                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                            {currentStock} Remaining in Size {selectedSize}
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded border border-green-100 text-[10px] font-bold tracking-[0.1em] uppercase">
+                            <Check size={14} />
+                            {currentStock <= 5 ? `Only ${currentStock} Left` : 'In Stock'}
                         </div>
                     )}
+                    
+                    <span className="text-[10px] text-gray-400 font-medium italic">
+                        {selectedColor} {selectedSize && `/ Size ${selectedSize}`}
+                    </span>
                 </div>
             </div>
+
+            {/* Description */}
+            <p className="text-[13px] text-black/60 leading-relaxed font-medium max-w-lg">
+                {product.description}
+            </p>
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-4">
@@ -128,20 +162,21 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product: anyProduct }) => {
                     variant="primary" 
                     onClick={handleAddToCart}
                     disabled={isOutOfStock}
-                    className={`!w-full !py-5 !rounded-none flex items-center justify-center gap-3 font-bold tracking-[0.3em] text-[10px] ${isOutOfStock ? 'opacity-50 !cursor-not-allowed grayscale' : ''}`}
+                    className={`!w-full !py-6 !rounded-none flex items-center justify-center gap-3 font-bold tracking-[0.3em] text-[11px] transition-all duration-300 ${isOutOfStock ? 'opacity-30 !cursor-not-allowed grayscale' : 'hover:bg-luxury-red/90'}`}
                 >
-                    <ShoppingBag size={18} strokeWidth={2.5} />
-                    {isOutOfStock ? 'OUT OF STOCK' : 'ADD TO BAG'}
+                    <ShoppingBag size={20} strokeWidth={2.5} />
+                    {isOutOfStock ? 'RESTOCKING SOON' : 'ADD TO BAG'}
                 </Button>
+                
                 <button
                     onClick={handleToggleWishlist}
-                    className={`w-full py-4 border flex items-center justify-center gap-3 text-[10px] font-bold tracking-[0.3em] uppercase transition-all group ${isWishlisted
+                    className={`w-full py-4 border flex items-center justify-center gap-3 text-[10px] font-bold tracking-[0.3em] uppercase transition-all duration-300 group ${isWishlisted
                         ? 'text-luxury-red border-luxury-red bg-luxury-red/5'
-                        : 'border-black/10 text-black hover:border-black'
+                        : 'border-black/10 text-black hover:border-luxury-red hover:text-luxury-red hover:bg-luxury-red/[0.02]'
                         }`}
                 >
                     <Heart size={18} fill={isWishlisted ? "currentColor" : "none"} className="group-hover:scale-110 transition-transform" />
-                    {isWishlisted ? "REMOVE FROM WISHLIST" : "ADD TO WISHLIST"}
+                    {isWishlisted ? "REMOVE FROM WISHLIST" : "MY FAVOURITE"}
                 </button>
             </div>
 

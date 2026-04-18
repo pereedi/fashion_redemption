@@ -48,7 +48,7 @@ const AdminInventory = () => {
     
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/products/${editingProduct._id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -109,6 +109,17 @@ const AdminInventory = () => {
     { name: 'stock', label: 'Stock Quantity', type: 'number', required: true }
   ];
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredInventory = useMemo(() => {
+    if (!searchQuery) return products;
+    const lowerQuery = searchQuery.toLowerCase();
+    return products.filter(p => 
+      p.name.toLowerCase().includes(lowerQuery) || 
+      p.id?.toString().toLowerCase().includes(lowerQuery)
+    );
+  }, [products, searchQuery]);
+
   if (loading) return (
     <div className="flex justify-center items-center h-64">
       <div className="w-8 h-8 border-2 border-luxury-red border-t-transparent rounded-full animate-spin"></div>
@@ -118,17 +129,28 @@ const AdminInventory = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-serif font-bold tracking-tight uppercase">Inventory Control</h1>
           <p className="text-sm text-gray-500">Monitor stock levels and quickly reconcile inventory.</p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative w-full sm:w-64">
+          <input 
+            type="text"
+            placeholder="Search inventory..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-10 px-4 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:border-luxury-red transition-all"
+          />
         </div>
       </div>
 
       <DataTable 
-        data={products} 
+        data={filteredInventory} 
         columns={columns} 
         actions={actions} 
-        keyExtractor={(row) => row._id} 
+        keyExtractor={(row) => row.id} 
       />
 
       {/* Modal */}

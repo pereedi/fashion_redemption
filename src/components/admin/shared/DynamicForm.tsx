@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 
 export type FieldType = 'text' | 'number' | 'select' | 'textarea' | 'checkbox' | 'file' | 'section';
 
@@ -69,14 +70,36 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
-    // Basic file text update simulating upload for now - in reality you'd handle FormData
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, isMultiple?: boolean) => {
     if (e.target.files && e.target.files.length > 0) {
-      const fileNames = Array.from(e.target.files).map(f => URL.createObjectURL(f)); // Dummy object URLs
-      setFormData({ 
-        ...formData, 
-        [fieldName]: e.target.multiple ? [...(formData[fieldName] || []), ...fileNames] : [fileNames[0]]
-      });
+      const newFiles = Array.from(e.target.files);
+      
+      // Process each file to Base64
+      const processFiles = async () => {
+        const base64Files = await Promise.all(newFiles.map(file => {
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          });
+        }));
+
+        const currentValues = Array.isArray(formData[fieldName]) ? formData[fieldName] : [];
+        
+        const updatedValue = isMultiple 
+          ? [...currentValues, ...base64Files] 
+          : [base64Files[0]];
+
+        const updatedData = { 
+          ...formData, 
+          [fieldName]: updatedValue
+        };
+        
+        setFormData(updatedData);
+        if (onChange) onChange(updatedData);
+      };
+
+      processFiles();
     }
   };
 
@@ -164,22 +187,33 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                     type="file"
                     name={field.name}
                     multiple={field.multiple}
-                    onChange={(e) => handleFileChange(e, field.name)}
+                    onChange={(e) => handleFileChange(e, field.name, field.multiple)}
                     className="text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-black file:text-white hover:file:bg-luxury-red transition-all cursor-pointer"
                   />
-                  {/* Image previews */}
-                  {Array.isArray(formData[field.name]) && formData[field.name].length > 0 && (
-                     <div className="flex flex-wrap gap-3 mt-2">
-                       {formData[field.name].map((imgUrl: string, idx: number) => (
-                         <div key={idx} className="relative w-20 h-24 border rounded-lg bg-white overflow-hidden shadow-sm group">
-                           <img src={imgUrl} alt="preview" className="w-full h-full object-cover" />
-                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                             <span className="text-[8px] text-white font-bold">PREVIEW</span>
-                           </div>
-                         </div>
-                       ))}
-                     </div>
-                  )}
+                   {/* Image previews */}
+                   {Array.isArray(formData[field.name]) && formData[field.name].length > 0 && (
+                      <div className="flex flex-wrap gap-3 mt-4">
+                        {formData[field.name].map((imgUrl: string, idx: number) => (
+                          <div key={idx} className="relative w-24 h-28 border rounded-lg bg-white overflow-hidden shadow-sm group">
+                            <img src={imgUrl} alt="preview" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newImages = [...formData[field.name]];
+                                newImages.splice(idx, 1);
+                                setFormData({ ...formData, [field.name]: newImages });
+                              }}
+                              className="absolute top-1 right-1 p-1 bg-white/90 rounded-full shadow-md text-luxury-red hover:bg-luxury-red hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <X size={14} />
+                            </button>
+                            <div className="absolute inset-0 bg-black/5 flex items-end justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[7px] text-gray-500 font-bold p-1 w-full text-center bg-white/90">PREVIEW</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                   )}
                 </div>
               ) : (
                 <div className="relative">

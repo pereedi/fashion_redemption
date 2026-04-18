@@ -43,11 +43,24 @@ const AdminProducts = () => {
     if (token) fetchProducts();
   }, [token]);
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery) return products;
+    const lowerQuery = searchQuery.toLowerCase();
+    return products.filter(p => 
+      p.name.toLowerCase().includes(lowerQuery) || 
+      p.id?.toString().toLowerCase().includes(lowerQuery) ||
+      p.category?.toLowerCase().includes(lowerQuery)
+    );
+  }, [products, searchQuery]);
+
   const handleDelete = async (row: any) => {
     if (!window.confirm(`Are you sure you want to delete ${row.name}?`)) return;
     
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/products/${row._id}`, {
+      // Use id (external_id) for deletion as per repository
+      const res = await fetch(`${API_BASE_URL}/api/admin/products/${row.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -58,6 +71,28 @@ const AdminProducts = () => {
       }
     } catch (error) {
       console.error('Error deleting product', error);
+    }
+  };
+
+  const handleImportSamples = async () => {
+    if (!window.confirm('This will import the sample product catalog into your database. Continue?')) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/seed-products`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        alert('Sample catalog imported successfully!');
+        fetchProducts();
+      } else {
+        alert('Failed to import samples');
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,7 +114,7 @@ const AdminProducts = () => {
     setIsSubmitting(true);
     try {
       const url = editingProduct 
-        ? `${API_BASE_URL}/api/admin/products/${editingProduct._id}`
+        ? `${API_BASE_URL}/api/admin/products/${editingProduct.id}`
         : `${API_BASE_URL}/api/admin/products`;
       
       const method = editingProduct ? 'PUT' : 'POST';
@@ -118,9 +153,9 @@ const AdminProducts = () => {
     {
       header: 'Image',
       cell: (row: any) => (
-        <div className="w-12 h-12 rounded-md bg-gray-100 overflow-hidden">
+        <div className="w-12 h-12 rounded-md bg-gray-100 overflow-hidden relative group">
           {row.images && row.images[0] && (
-            <img src={row.images[0]} alt={row.name} className="w-full h-full object-cover" />
+            <img src={row.images[0]} alt={row.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
           )}
         </div>
       )
@@ -131,30 +166,31 @@ const AdminProducts = () => {
       header: 'Category', 
       cell: (row: any) => (
         <div className="flex flex-col">
-          <span className="capitalize font-medium">{row.category}</span>
+          <span className="capitalize font-medium text-xs">{row.category}</span>
           <span className="text-[10px] text-gray-500 uppercase tracking-tighter">{row.type}</span>
         </div>
       ) 
     },
-    { header: 'Price', cell: (row: any) => `Esp ${Number(row.basePrice).toLocaleString()}` },
+    { header: 'Price', cell: (row: any) => <span className="font-bold text-xs">Esp {Number(row.basePrice).toLocaleString()}</span> },
     { 
       header: 'Stock Status', 
       cell: (row: any) => {
-        const totalStock = row.variants?.reduce((acc: number, v: any) => acc + v.stock, 0) || row.stock || 0;
+        const totalStock = row.variants?.reduce((acc: number, v: any) => acc + (v.stock || 0), 0) || row.stock || 0;
         return (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5 py-1">
             <span className={`px-2 py-0.5 text-[10px] font-bold rounded w-fit ${
               totalStock === 0 ? 'bg-red-100 text-luxury-red' : 
               totalStock < 10 ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
             }`}>
               {totalStock} TOTAL
             </span>
-            <div className="flex flex-wrap gap-1">
-              {row.variants?.map((v: any, i: number) => (
-                <span key={i} className="text-[8px] bg-gray-100 px-1 rounded text-gray-600">
-                  {v.size}: {v.stock}
+            <div className="flex flex-wrap gap-1 max-w-[200px]">
+              {row.variants?.slice(0, 6).map((v: any, i: number) => (
+                <span key={i} className="text-[8px] bg-white border border-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-medium">
+                  {v.color ? `${v.color.slice(0,3)}/` : ''}{v.size}: {v.stock}
                 </span>
               ))}
+              {(row.variants?.length || 0) > 6 && <span className="text-[8px] text-gray-400">+{row.variants.length - 6} more</span>}
             </div>
           </div>
         );
@@ -187,7 +223,7 @@ const AdminProducts = () => {
       required: true,
       options: selectedCategory ? CATEGORY_MAP[selectedCategory]?.types || [] : []
     },
-
+ 
     { name: 'pricing_media', label: 'Pricing & Images', type: 'section' },
     { name: 'basePrice', label: 'Price (Esp)', type: 'number', required: true, prefix: 'Esp' },
     { name: 'images', label: 'Images (URLs)', type: 'file', multiple: true, required: !editingProduct }
@@ -202,23 +238,45 @@ const AdminProducts = () => {
   return (
     <div className="space-y-10 animate-fade-in min-h-screen bg-[#F5F5F5] -m-8 p-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-serif font-bold tracking-tight uppercase">Products</h1>
           <p className="text-sm text-gray-500">Manage your store's inventory and catalog.</p>
         </div>
-        <button 
-          onClick={handleAdd}
-          className="flex items-center justify-center gap-2 bg-luxury-red text-white px-4 py-2 rounded-md hover:bg-black transition-colors text-sm font-medium shadow-sm"
-        >
-          <Plus size={16} /> Add Product
-        </button>
+        
+        <div className="flex flex-wrap gap-4 items-center">
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-64">
+            <input 
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 px-4 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:border-luxury-red transition-all"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <button 
+              onClick={handleImportSamples}
+              className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-md hover:border-black hover:text-black transition-all text-sm font-medium shadow-sm"
+            >
+              Restore Samples
+            </button>
+            <button 
+              onClick={handleAdd}
+              className="flex items-center justify-center gap-2 bg-luxury-red text-white px-4 py-2 rounded-md hover:bg-black transition-colors text-sm font-medium shadow-sm"
+            >
+              <Plus size={16} /> Add Product
+            </button>
+          </div>
+        </div>
       </div>
 
       <DataTable 
-        data={products} 
+        data={filteredProducts} 
         columns={columns} 
         actions={actions} 
-        keyExtractor={(row) => row._id} 
+        keyExtractor={(row) => row.id} 
       />
 
       {/* Modal */}
