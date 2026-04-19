@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { DataTable, type Column } from '../../components/admin/shared/DataTable';
 import { DynamicForm, type FormField } from '../../components/admin/shared/DynamicForm';

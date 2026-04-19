@@ -7,14 +7,15 @@ export interface CartItem {
   basePrice: number;
   image: string;
   size: string;
+  color?: string;
   quantity: number;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (item: CartItem) => void;
-  removeFromCart: (id: string | number, size: string) => void;
-  updateQuantity: (id: string | number, size: string, quantity: number) => void;
+  removeFromCart: (id: string | number, size: string, color?: string) => void;
+  updateQuantity: (id: string | number, size: string, color: string | undefined, quantity: number) => void;
   isCartOpen: boolean;
   setIsCartOpen: (isOpen: boolean) => void;
   totalSubtotal: number;
@@ -37,10 +38,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addToCart = (newItem: CartItem) => {
     setCartItems(prev => {
-      const existingItem = prev.find(item => item.id === newItem.id && item.size === newItem.size);
+      const existingItem = prev.find(item => 
+        item.id === newItem.id && 
+        item.size === newItem.size && 
+        item.color === newItem.color
+      );
       if (existingItem) {
         return prev.map(item => 
-          item.id === newItem.id && item.size === newItem.size
+          item.id === newItem.id && item.size === newItem.size && item.color === newItem.color
             ? { ...item, quantity: item.quantity + newItem.quantity }
             : item
         );
@@ -50,14 +55,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (id: string | number, size: string) => {
-    setCartItems(prev => prev.filter(item => !(item.id === id && item.size === size)));
+  const removeFromCart = (id: string | number, size: string, color?: string) => {
+    setCartItems(prev => prev.filter(item => !(item.id === id && item.size === size && item.color === color)));
   };
 
-  const updateQuantity = (id: string | number, size: string, quantity: number) => {
+  const updateQuantity = (id: string | number, size: string, color: string | undefined, quantity: number) => {
     if (quantity < 1) return;
     setCartItems(prev => prev.map(item => 
-      item.id === id && item.size === size ? { ...item, quantity } : item
+      (item.id === id && item.size === size && item.color === color) ? { ...item, quantity } : item
     ));
   };
 
