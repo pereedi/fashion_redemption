@@ -125,6 +125,14 @@ const AdminProducts = () => {
         variants: variants
       };
 
+      console.log(`[DEBUG] Submitting to ${url}`);
+      console.log(`[DEBUG] Final Data Structure:`, { 
+        name: finalData.name, 
+        imageCount: finalData.images?.length,
+        variantCount: finalData.variants?.length,
+        payloadLength: JSON.stringify(finalData).length 
+      });
+
       const res = await fetch(url, {
         method,
         headers: { 

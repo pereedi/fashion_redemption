@@ -103,10 +103,20 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               canvas.width = width;
               canvas.height = height;
               const ctx = canvas.getContext('2d');
-              ctx?.drawImage(img, 0, 0, width, height);
-              // Medium quality JPEG is much smaller than PNG or raw Base64
-              resolve(canvas.toDataURL('image/jpeg', 0.7));
+              if (ctx) {
+                ctx.drawImage(img, 0, 0, width, height);
+                // Medium quality JPEG is much smaller than PNG or raw Base64
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+              } else {
+                resolve(event.target?.result as string); // Fallback
+              }
             };
+            img.onerror = () => {
+              resolve(event.target?.result as string); // Fallback if image fails to load
+            };
+          };
+          reader.onerror = () => {
+            resolve(''); // Handle reader error
           };
         });
       };
