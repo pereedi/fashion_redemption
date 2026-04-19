@@ -138,12 +138,22 @@ const AdminProducts = () => {
         setIsModalOpen(false);
         fetchProducts();
       } else {
-        const errorData = await res.json();
-        alert(`Error: ${errorData.message}`);
+        let errorMessage = 'Failed to save product';
+        const contentType = res.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await res.json();
+          errorMessage = errorData.message || errorMessage;
+        } else {
+          // If not JSON, it might be a "Payload Too Large" HTML page
+          errorMessage = `Server Error (${res.status}): The image might be too large or the server is busy.`;
+        }
+        
+        alert(`Error: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      alert('An error occurred while saving the product.');
+      alert('A network error occurred. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
     }

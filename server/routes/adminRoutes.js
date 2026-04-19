@@ -24,6 +24,15 @@ router.get('/products', async (req, res) => {
 
 router.post('/products', async (req, res) => {
   try {
+    const bodySize = JSON.stringify(req.body).length;
+    console.log(`[DEBUG] Creating product. Payload size: ${(bodySize / 1024).toFixed(2)} KB`);
+    
+    // Quick validation
+    if (!req.body.name || req.body.basePrice === undefined) {
+      console.error('[DEBUG] Validation failed: Missing name or basePrice');
+      return res.status(400).json({ message: 'Product Name and Price are required.' });
+    }
+
     const productId = await ProductRepository.create(req.body);
     const createdProduct = await ProductRepository.getById(productId);
     res.status(201).json(createdProduct);
