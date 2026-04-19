@@ -48,6 +48,33 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Fashion Redemption Server is running' });
 });
 
+// System Check for Production Diagnostics
+app.get('/api/system-check', async (req, res) => {
+  try {
+    let migrationStatus = 'checked';
+    if (req.query.migrate === 'true') {
+      console.log('[MANUAL MIGRATE] Triggered via system-check');
+      await db.migrate.latest();
+      migrationStatus = 'triggered';
+    }
+
+    const migrations = await db('knex_migrations').select('*');
+    const productImagesInfo = await db.raw('DESCRIBE product_images');
+    
+    res.json({
+      status: 'OK',
+      env: process.env.NODE_ENV,
+      database: process.env.MYSQL_DATABASE,
+      applied_migrations: migrations.map(m => m.name),
+      table_structure: {
+        product_images: productImagesInfo[0]
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Database Debug Endpoint (Production Diagnostic)
 app.get('/api/debug/db-status', async (req, res) => {
   try {
