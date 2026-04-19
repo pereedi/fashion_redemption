@@ -1,14 +1,19 @@
-export const up = function(knex) {
-  return knex.schema
-    .createTable('users', (table) => {
+export const up = async function(knex) {
+  const hasUsers = await knex.schema.hasTable('users');
+  if (!hasUsers) {
+    await knex.schema.createTable('users', (table) => {
       table.increments('id').primary();
       table.string('name').notNullable();
       table.string('email').unique().notNullable();
       table.string('password').notNullable();
       table.enum('role', ['customer', 'admin']).defaultTo('customer');
       table.timestamps(true, true);
-    })
-    .createTable('products', (table) => {
+    });
+  }
+
+  const hasProducts = await knex.schema.hasTable('products');
+  if (!hasProducts) {
+    await knex.schema.createTable('products', (table) => {
       table.increments('id').primary();
       table.string('external_id').unique().notNullable();
       table.string('name').notNullable();
@@ -19,22 +24,34 @@ export const up = function(knex) {
       table.decimal('rating', 3, 2).defaultTo(0);
       table.integer('review_count').defaultTo(0);
       table.timestamps(true, true);
-    })
-    .createTable('product_images', (table) => {
+    });
+  }
+
+  const hasProductImages = await knex.schema.hasTable('product_images');
+  if (!hasProductImages) {
+    await knex.schema.createTable('product_images', (table) => {
       table.increments('id').primary();
       table.integer('product_id').unsigned().references('id').inTable('products').onDelete('CASCADE');
       table.string('url').notNullable();
       table.boolean('is_primary').defaultTo(false);
-    })
-    .createTable('product_variants', (table) => {
+    });
+  }
+
+  const hasProductVariants = await knex.schema.hasTable('product_variants');
+  if (!hasProductVariants) {
+    await knex.schema.createTable('product_variants', (table) => {
       table.increments('id').primary();
       table.integer('product_id').unsigned().references('id').inTable('products').onDelete('CASCADE');
       table.string('size');
       table.string('color');
       table.integer('stock').defaultTo(0);
       table.decimal('price_override', 12, 2);
-    })
-    .createTable('orders', (table) => {
+    });
+  }
+
+  const hasOrders = await knex.schema.hasTable('orders');
+  if (!hasOrders) {
+    await knex.schema.createTable('orders', (table) => {
       table.increments('id').primary();
       table.integer('user_id').unsigned().references('id').inTable('users').onDelete('SET NULL');
       table.string('status').defaultTo('pending');
@@ -50,8 +67,12 @@ export const up = function(knex) {
       table.string('customer_city').notNullable();
       table.string('customer_postal_code').notNullable();
       table.timestamps(true, true);
-    })
-    .createTable('order_items', (table) => {
+    });
+  }
+
+  const hasOrderItems = await knex.schema.hasTable('order_items');
+  if (!hasOrderItems) {
+    await knex.schema.createTable('order_items', (table) => {
       table.increments('id').primary();
       table.integer('order_id').unsigned().references('id').inTable('orders').onDelete('CASCADE');
       table.integer('product_id').unsigned().references('id').inTable('products').onDelete('SET NULL');
@@ -60,13 +81,18 @@ export const up = function(knex) {
       table.integer('quantity').notNullable();
       table.string('size');
       table.string('image');
-    })
-    .createTable('wishlist', (table) => {
+    });
+  }
+
+  const hasWishlist = await knex.schema.hasTable('wishlist');
+  if (!hasWishlist) {
+    await knex.schema.createTable('wishlist', (table) => {
       table.increments('id').primary();
       table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE');
       table.integer('product_id').unsigned().references('id').inTable('products').onDelete('CASCADE');
       table.unique(['user_id', 'product_id']);
     });
+  }
 };
 
 export const down = function(knex) {
