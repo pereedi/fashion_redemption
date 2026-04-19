@@ -139,13 +139,22 @@ app.listen(PORT, async () => {
   console.log('Using MySQL (Transactional) and DuckDB (Analytics)');
   
   // Run Migrations in Production
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) {
     try {
-      console.log('Running database migrations...');
-      await db.migrate.latest();
-      console.log('Database migrations completed successfully.');
+      console.log('--- PRODUCTION DATABASE SYNC ---');
+      console.log('Checking for pending migrations...');
+      const [batchNo, appliedMigrations] = await db.migrate.latest();
+      if (appliedMigrations.length > 0) {
+        console.log(`Success: Applied ${appliedMigrations.length} migrations in batch ${batchNo}`);
+        console.log('Updated tables:', appliedMigrations);
+      } else {
+        console.log('Database is already up to date.');
+      }
+      console.log('-------------------------------');
     } catch (err) {
-      console.error('Database migration failed:', err.message);
+      console.error('CRITICAL: Database migration failed on startup!');
+      console.error('Error details:', err.message);
+      // Don't kill the server, but log heavily so user sees it in Render logs
     }
   }
 
