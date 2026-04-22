@@ -55,6 +55,11 @@ class EspeesService {
       const data = await response.json();
 
       if (data.statusCode !== 200) {
+        logger.error('Espees payment initiation failed', { 
+          statusCode: data.statusCode,
+          message: data.message,
+          fullResponse: data 
+        });
         throw new Error(data.message || 'Failed to initialize Espees payment');
       }
 

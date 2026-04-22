@@ -153,12 +153,12 @@ const AdminDashboard = () => {
                   </tr>
                 ) : (
                   stats.recentOrders.map((order: any) => (
-                    <tr key={order._id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-6 text-sm font-medium">#{order._id.substring(order._id.length - 6).toUpperCase()}</td>
-                      <td className="py-4 px-6 text-sm text-gray-600">{order.customer?.fullName || 'Guest'}</td>
+                    <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <td className="py-4 px-6 text-sm font-medium">#{String(order.id).padStart(6, '0')}</td>
+                      <td className="py-4 px-6 text-sm text-gray-600">{order.customer_name || 'Guest'}</td>
                       <td className="py-4 px-6">
                         <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm ${
-                          order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                          order.status === 'delivered' || order.status === 'paid' ? 'bg-green-100 text-green-800' :
                           order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
                           order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
                           order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
@@ -167,7 +167,7 @@ const AdminDashboard = () => {
                           {order.status}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-sm font-medium text-right">Esp {order.totals?.total?.toFixed(2)}</td>
+                      <td className="py-4 px-6 text-sm font-medium text-right">Esp {Number(order.total).toFixed(2)}</td>
                     </tr>
                   ))
                 )}
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
               <div className="p-6 text-center text-sm text-gray-500">All products are adequately stocked.</div>
             ) : (
               stats.lowStockProducts.map((product: any) => (
-                <div key={product._id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                <div key={product.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                   <div>
                     <p className="text-sm font-medium text-black line-clamp-1">{product.name}</p>
                     <p className="text-xs text-gray-500">ID: {product.id}</p>
