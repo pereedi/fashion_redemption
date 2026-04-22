@@ -44,6 +44,7 @@ class OrderRepository {
         const [orderId] = await trx('orders').insert({
           user_id: headerData.user_id,
           status: headerData.status || 'pending',
+          payment_ref: headerData.payment_ref || null,
           subtotal: headerData.totals.subtotal,
           tax: headerData.totals.tax,
           discount: headerData.totals.discount,
@@ -52,6 +53,7 @@ class OrderRepository {
           shipping_price: headerData.shipping.price,
           payment_method: headerData.payment.method,
           customer_name: headerData.customer.fullName,
+          customer_email: headerData.customer.email,
           customer_address: headerData.customer.address,
           customer_city: headerData.customer.city,
           customer_postal_code: headerData.customer.postalCode
@@ -82,7 +84,7 @@ class OrderRepository {
               order_id: orderId,
               product_id: product ? product.id : null,
               name: item.name,
-              price: item.price ? item.price.replace(/[^0-9.]/g, '') : '0.00',
+              price: item.price !== undefined ? String(item.price).replace(/[^0-9.]/g, '') : '0.00',
               quantity: item.quantity,
               size: item.size,
               image: item.image
@@ -102,11 +104,26 @@ class OrderRepository {
 
   async updateStatus(id, status) {
     try {
-      const updated = await db('orders').where('id', id).update({ status });
+      const updateData = { status };
+      if (status === 'paid') {
+        updateData.paid_at = db.fn.now();
+      }
+      const updated = await db('orders').where('id', id).update(updateData);
       if (!updated) return null;
       return this.getById(id);
     } catch (err) {
       logger.error('Error in OrderRepository.updateStatus', { error: err.message, id, status });
+      throw err;
+    }
+  }
+
+  async getByPaymentRef(paymentRef) {
+    try {
+      const order = await db('orders').where('payment_ref', paymentRef).first();
+      if (!order) return null;
+      return this.getById(order.id);
+    } catch (err) {
+      logger.error('Error in OrderRepository.getByPaymentRef', { error: err.message, paymentRef });
       throw err;
     }
   }

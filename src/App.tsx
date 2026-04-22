@@ -11,6 +11,7 @@ import CategoryPage from './pages/CategoryPage.tsx';
 import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
 import OrderConfirmationPage from './pages/OrderConfirmationPage.tsx';
+import PaymentCallbackPage from './pages/PaymentCallbackPage.tsx';
 import { WishlistProvider } from './context/WishlistContext';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -47,6 +48,7 @@ function App() {
                   <Route path="/sales" element={<CollectionsPage filter="sale" />} />
                   <Route path="/search" element={<SearchResultsPage />} />
                   <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+                  <Route path="/payment/verify" element={<PaymentCallbackPage />} />
                   <Route
                     path="/checkout"
                     element={

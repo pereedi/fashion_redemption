@@ -46,7 +46,7 @@ const AdminOrders = () => {
     
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/orders/${editingOrder._id}/status`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/orders/${editingOrder.id}/status`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -73,24 +73,31 @@ const AdminOrders = () => {
   const columns: Column<any>[] = [
     { 
       header: 'Order ID', 
-      cell: (row: any) => <span className="font-medium px-2 py-1 bg-gray-100 rounded text-xs uppercase tracking-wider text-gray-700">#{row._id.substring(row._id.length - 6)}</span> 
+      cell: (row: any) => <span className="font-medium px-2 py-1 bg-gray-100 rounded text-xs uppercase tracking-wider text-gray-700">#{String(row.id).padStart(6, '0')}</span> 
     },
-    { header: 'Date', cell: (row: any) => new Date(row.createdAt).toLocaleDateString() },
-    { header: 'Customer', cell: (row: any) => row.customer?.fullName || 'Guest' },
-    { header: 'Total', cell: (row: any) => `$${Number(row.totals?.total).toFixed(2)}` },
+    { header: 'Date', cell: (row: any) => new Date(row.created_at || row.createdAt).toLocaleDateString() },
+    { header: 'Customer', cell: (row: any) => row.customer_name || 'Guest' },
+    { header: 'Total', cell: (row: any) => `Esp ${Number(row.total).toLocaleString()}` },
+    { 
+      header: 'Payment Ref', 
+      cell: (row: any) => row.payment_ref ? <span className="text-[10px] font-mono text-gray-400">{row.payment_ref}</span> : <span className="text-[10px] text-gray-300 italic">None</span>
+    },
     { 
       header: 'Status', 
-      cell: (row: any) => (
-        <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm ${
-          row.status === 'delivered' ? 'bg-green-100 text-green-800' :
-          row.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-          row.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
-          row.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-          'bg-yellow-100 text-yellow-800'
-        }`}>
-          {row.status}
-        </span>
-      )
+      cell: (row: any) => {
+        const status = row.status?.toLowerCase();
+        return (
+          <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm ${
+            status === 'delivered' || status === 'paid' ? 'bg-green-100 text-green-800' :
+            status === 'processing' ? 'bg-blue-100 text-blue-800' :
+            status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+            status === 'cancelled' ? 'bg-red-100 text-red-800' :
+            'bg-yellow-100 text-yellow-800'
+          }`}>
+            {status}
+          </span>
+        );
+      }
     }
   ];
 
@@ -106,6 +113,7 @@ const AdminOrders = () => {
       required: true,
       options: [
         { label: 'Pending', value: 'pending' },
+        { label: 'Paid', value: 'paid' },
         { label: 'Processing', value: 'processing' },
         { label: 'Shipped', value: 'shipped' },
         { label: 'Delivered', value: 'delivered' },
@@ -133,7 +141,7 @@ const AdminOrders = () => {
         data={orders} 
         columns={columns} 
         actions={actions} 
-        keyExtractor={(row) => row._id} 
+        keyExtractor={(row) => row.id} 
       />
 
       {/* Modal */}
@@ -154,9 +162,12 @@ const AdminOrders = () => {
             
             <div className="p-6">
               <div className="mb-6 bg-gray-50 p-4 rounded-md border border-gray-100">
-                <p className="text-sm text-gray-600 mb-1">Editing Order ID: <span className="font-bold text-black uppercase">#{editingOrder?._id.substring(editingOrder._id.length - 6)}</span></p>
-                <p className="text-sm text-gray-600">Customer: <span className="font-medium text-black">{editingOrder?.customer?.fullName}</span></p>
+                <p className="text-sm text-gray-600 mb-1">Editing Order ID: <span className="font-bold text-black uppercase">#{String(editingOrder?.id).padStart(6, '0')}</span></p>
+                <p className="text-sm text-gray-600">Customer: <span className="font-medium text-black">{editingOrder?.customer_name}</span></p>
                 <p className="text-sm text-gray-600">Current Status: <span className="font-medium text-black uppercase">{editingOrder?.status}</span></p>
+                {editingOrder?.payment_ref && (
+                  <p className="text-xs text-gray-500 mt-2 italic font-mono">Payment Ref: {editingOrder.payment_ref}</p>
+                )}
               </div>
 
               <DynamicForm 

@@ -19,6 +19,7 @@ const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
+    email: '',
     address: '',
     city: '',
     postalCode: '',
@@ -56,12 +57,13 @@ const CheckoutPage: React.FC = () => {
       const orderData = {
         customer: {
           fullName: formData.fullName,
+          email: formData.email,
           address: formData.address,
           city: formData.city,
           postalCode: formData.postalCode
         },
         items: cartItems.map(item => ({
-          productId: item.id,
+          id: item.id,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
@@ -93,13 +95,25 @@ const CheckoutPage: React.FC = () => {
         body: JSON.stringify(orderData)
       });
 
-      if (!response.ok) throw new Error('Order submission failed');
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.error || errorBody.message || 'Order submission failed');
+      }
+
+      const data = await response.json();
+
+      // If we have a redirect URL (Espees), go there
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+        return;
+      }
 
       clearCart();
       navigate('/order-confirmation');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('FAILED to place order. Please try again.');
+      const errorMessage = err.response?.data?.message || err.message || 'Unknown error';
+      alert(`FAILED to place order: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }

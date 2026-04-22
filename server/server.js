@@ -17,7 +17,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || '*',
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -48,70 +52,9 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Fashion Redemption Server is running' });
 });
 
-// System Check for Production Diagnostics
-app.get('/api/system-check', async (req, res) => {
-  try {
-    let migrationStatus = 'checked';
-    if (req.query.migrate === 'true') {
-      console.log('[MANUAL MIGRATE] Triggered via system-check');
-      await db.migrate.latest();
-      migrationStatus = 'triggered';
-    }
-
-    const migrations = await db('knex_migrations').select('*');
-    const productImagesInfo = await db.raw('DESCRIBE product_images');
-    
-    res.json({
-      status: 'OK',
-      env: process.env.NODE_ENV,
-      database: process.env.MYSQL_DATABASE,
-      applied_migrations: migrations.map(m => m.name),
-      table_structure: {
-        product_images: productImagesInfo[0]
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Database Debug Endpoint (Production Diagnostic)
-app.get('/api/debug/db-status', async (req, res) => {
-  try {
-    const tables = await db.raw("SELECT table_name FROM information_schema.tables WHERE table_schema = (SELECT DATABASE())");
-    const userCount = await db('users').count('id as count').first();
-    const productCount = await db('products').count('id as count').first();
-    
-    res.json({
-      status: 'connected',
-      database: process.env.MYSQL_DATABASE,
-      tables: tables[0].map(t => t.TABLE_NAME || t.table_name),
-      counts: {
-        users: userCount.count,
-        products: productCount.count
-      }
-    });
-  } catch (err) {
-    console.error('Database debug error:', err);
-    res.status(500).json({
-      status: 'error',
-      message: err.message,
-      code: err.code,
-      errno: err.errno,
-      sqlState: err.sqlState,
-      stack: process.env.NODE_ENV === 'production' ? err.stack : undefined, // Useful for debugging production connection issues
-      config: {
-        version: '1.3.0-diagnostic-lengths',
-        host: { value: process.env.MYSQL_HOST, len: (process.env.MYSQL_HOST || '').length },
-        port: { value: process.env.MYSQL_PORT, len: (process.env.MYSQL_PORT || '').length },
-        user: { value: process.env.MYSQL_USER, len: (process.env.MYSQL_USER || '').length },
-        database: { value: process.env.MYSQL_DATABASE, len: (process.env.MYSQL_DATABASE || '').length },
-        hasPassword: !!process.env.MYSQL_PASSWORD,
-        hasUrl: !!process.env.DATABASE_URL,
-        ssl: !!process.env.MYSQL_SSL
-      }
-    });
-  }
+// Health Check
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'Fashion Redemption Server is running' });
 });
 
 // Seed endpoint (call once to add products with Google Drive images)

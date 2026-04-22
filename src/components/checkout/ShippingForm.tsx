@@ -17,7 +17,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({ formData, onChange }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="md:col-span-2 space-y-2">
+        <div className="space-y-2">
           <label className="text-[10px] font-bold tracking-widest text-black/40 uppercase">Full Name</label>
           <input
             type="text"
@@ -25,6 +25,18 @@ const ShippingForm: React.FC<ShippingFormProps> = ({ formData, onChange }) => {
             value={formData.fullName}
             onChange={onChange}
             placeholder="e.g. Alexander McQueen"
+            className="w-full px-5 py-4 bg-white border border-black/10 rounded-sm focus:border-luxury-red outline-none transition-all placeholder:text-black/10 text-sm"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-bold tracking-widest text-black/40 uppercase">Email Address</label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={onChange}
+            placeholder="e.g. couture@redemption.com"
             className="w-full px-5 py-4 bg-white border border-black/10 rounded-sm focus:border-luxury-red outline-none transition-all placeholder:text-black/10 text-sm"
           />
         </div>
