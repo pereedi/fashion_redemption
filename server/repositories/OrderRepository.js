@@ -127,6 +127,33 @@ class OrderRepository {
       throw err;
     }
   }
+
+  async deleteAndRestoreStock(orderId) {
+    return db.transaction(async (trx) => {
+      try {
+        // 1. Get all items for the order
+        const items = await trx('order_items').where('order_id', orderId);
+        
+        // 2. Restore stock for each item
+        for (const item of items) {
+          if (item.product_id && item.size) {
+            await trx('product_variants')
+              .where({ product_id: item.product_id, size: item.size })
+              .increment('stock', item.quantity);
+          }
+        }
+        
+        // 3. Delete order items and order
+        await trx('order_items').where('order_id', orderId).del();
+        await trx('orders').where('id', orderId).del();
+        
+        logger.info('Order deleted and stock restored after failure', { orderId });
+      } catch (err) {
+        logger.error('Failed to restore stock during order deletion', { orderId, error: err.message });
+        throw err;
+      }
+    });
+  }
 }
 
 export default new OrderRepository();

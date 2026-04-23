@@ -29,33 +29,39 @@ router.post('/', async (req, res) => {
 
     // If payment method is Espees, we handle it differently
     if (orderData.payment.method === 'espees') {
-      // 1. Create order as pending
+      // 1. Create order as pending (decrements stock)
       const orderId = await OrderRepository.create({
         ...orderData,
         status: 'pending'
       });
 
-      // 2. Initiate Espees Payment
-      const espeesData = await espeesService.initiatePayment({
-        orderId,
-        total: orderData.totals.total,
-        items: orderData.items,
-        customer: orderData.customer
-      });
+      try {
+        // 2. Initiate Espees Payment
+        const espeesData = await espeesService.initiatePayment({
+          orderId,
+          total: orderData.totals.total,
+          items: orderData.items,
+          customer: orderData.customer
+        });
 
-      // 3. Update order with payment_ref
-      await OrderRepository.updateStatus(orderId, 'pending'); // Ensure it's pending
-      // We need to store return the ref
-      const savedOrder = await OrderRepository.getById(orderId);
-      
-      // Update with ref
-      await db('orders').where('id', orderId).update({ payment_ref: espeesData.paymentRef });
+        // 3. Update order with payment_ref
+        // We need to store return the ref
+        const savedOrder = await OrderRepository.getById(orderId);
+        
+        // Update with ref
+        await db('orders').where('id', orderId).update({ payment_ref: espeesData.paymentRef });
 
-      return res.status(201).json({
-        ...savedOrder,
-        paymentRef: espeesData.paymentRef,
-        redirectUrl: espeesData.redirectUrl
-      });
+        return res.status(201).json({
+          ...savedOrder,
+          paymentRef: espeesData.paymentRef,
+          redirectUrl: espeesData.redirectUrl
+        });
+      } catch (espeesErr) {
+        // ROLLBACK: If payment initiation fails, restore the stock and delete the order
+        console.error(`[ROLLBACK] Payment initiation failed for order ${orderId}. Restoring stock...`);
+        await OrderRepository.deleteAndRestoreStock(orderId);
+        throw espeesErr; // Let the main catch block handle the error response
+      }
     }
 
     const orderId = await OrderRepository.create(orderData);
