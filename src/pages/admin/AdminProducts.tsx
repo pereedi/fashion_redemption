@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { DataTable, type Column } from '../../components/admin/shared/DataTable';
 import { DynamicForm, type FormField } from '../../components/admin/shared/DynamicForm';
@@ -10,6 +11,7 @@ import API_BASE_URL from '../../config/api';
 
 const AdminProducts = () => {
   const { token } = useAuth();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -43,7 +45,13 @@ const AdminProducts = () => {
     if (token) fetchProducts();
   }, [token]);
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+
+  // Sync with URL query parameter
+  useEffect(() => {
+    const q = searchParams.get('q') || '';
+    setSearchQuery(q);
+  }, [searchParams]);
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery) return products;

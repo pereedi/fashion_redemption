@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
   BarChart3, 
@@ -102,6 +102,20 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (val: bool
 
 const Header = ({ onMenuClick }: { onMenuClick: () => void }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [searchValue, setSearchValue] = useState(searchParams.get('q') || '');
+
+  // Sync with URL if it changes externally
+  useEffect(() => {
+    setSearchValue(searchParams.get('q') || '');
+  }, [searchParams]);
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      navigate(`/admin/products?q=${encodeURIComponent(searchValue)}`);
+    }
+  };
 
   return (
     <header className="bg-white border-b border-gray-100 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30 sticky top-0">
@@ -117,7 +131,10 @@ const Header = ({ onMenuClick }: { onMenuClick: () => void }) => {
           <Search size={18} className="text-gray-400 mr-2" />
           <input 
             type="text" 
-            placeholder="Search products, orders, users..." 
+            placeholder="Search products..." 
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onKeyDown={handleSearch}
             className="bg-transparent border-none outline-none w-full text-sm text-black placeholder-gray-400"
           />
         </div>
