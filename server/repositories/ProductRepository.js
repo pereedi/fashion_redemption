@@ -293,17 +293,24 @@ class ProductRepository {
   async create(productData) {
     const { images, variants, ...baseData } = productData;
     
+    // 1. Sanitize baseData for MySQL
+    const allowedColumns = ['external_id', 'name', 'description', 'category', 'type', 'base_price', 'rating', 'review_count', 'on_sale', 'sale_price'];
+    const sanitizedData = {};
+    
     // Map basePrice to base_price if needed
-    if (baseData.basePrice !== undefined) {
-      baseData.base_price = baseData.basePrice;
-      delete baseData.basePrice;
-    }
+    if (baseData.basePrice !== undefined) baseData.base_price = baseData.basePrice;
+    
+    allowedColumns.forEach(col => {
+      if (baseData[col] !== undefined) {
+        sanitizedData[col] = baseData[col];
+      }
+    });
 
     return db.transaction(async (trx) => {
       try {
         const [productId] = await trx('products').insert({
-          ...baseData,
-          external_id: baseData.id || `prod_${Date.now()}`
+          ...sanitizedData,
+          external_id: sanitizedData.external_id || baseData.id || `prod_${Date.now()}`
         });
 
         if (images && images.length > 0) {
@@ -320,7 +327,10 @@ class ProductRepository {
           await trx('product_variants').insert(
             variants.map(v => ({
               product_id: productId,
-              ...v
+              size: v.size,
+              color: v.color,
+              stock: v.stock || 0,
+              price_override: v.price_override || null
             }))
           );
         }
@@ -336,25 +346,30 @@ class ProductRepository {
   async update(id, data) {
     const { images, variants, ...baseData } = data;
     
-    // Map basePrice to base_price if needed
-    if (baseData.basePrice !== undefined) {
-      baseData.base_price = baseData.basePrice;
-      delete baseData.basePrice;
-    }
+    // 1. Sanitize baseData for MySQL
+    const allowedColumns = ['external_id', 'name', 'description', 'category', 'type', 'base_price', 'rating', 'review_count', 'on_sale', 'sale_price'];
+    const sanitizedData = {};
+    
+    if (baseData.basePrice !== undefined) baseData.base_price = baseData.basePrice;
+    
+    allowedColumns.forEach(col => {
+      if (baseData[col] !== undefined) {
+        sanitizedData[col] = baseData[col];
+      }
+    });
     
     return db.transaction(async (trx) => {
       try {
         // 1. Update base product
-        const updated = await trx('products').where('external_id', id).update(baseData);
+        const updated = await trx('products').where('external_id', id).update(sanitizedData);
         if (!updated) {
-          // Try by id if external_id not found (for safety)
-          await trx('products').where('id', id).update(baseData);
+          await trx('products').where('id', id).update(sanitizedData);
         }
 
         const product = await trx('products').where('external_id', id).first() || await trx('products').where('id', id).first();
         if (!product) return null;
 
-        // 2. Update images (simple approach: replace all)
+        // 2. Update images
         if (images) {
           await trx('product_images').where('product_id', product.id).del();
           if (images.length > 0) {
@@ -368,14 +383,17 @@ class ProductRepository {
           }
         }
 
-        // 3. Update variants (simple approach: replace all)
+        // 3. Update variants
         if (variants) {
           await trx('product_variants').where('product_id', product.id).del();
           if (variants.length > 0) {
             await trx('product_variants').insert(
               variants.map(v => ({
                 product_id: product.id,
-                ...v
+                size: v.size,
+                color: v.color,
+                stock: v.stock || 0,
+                price_override: v.price_override || null
               }))
             );
           }
