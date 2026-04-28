@@ -3,7 +3,7 @@
 This document describes the API endpoints available for managing and searching products in the Fashion Redemption platform.
 
 ## Base URL
-`http://<your-domain>/api/products`
+`https://fashion-redemption-api.onrender.com/api/products`
 
 ---
 

@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/docs", "destination": "https://fashion-redemption-api.onrender.com/docs" },
     { "source": "/(.*)", "destination": "/" }
   ]
 }

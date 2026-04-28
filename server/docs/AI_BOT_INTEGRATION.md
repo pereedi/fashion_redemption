@@ -70,7 +70,7 @@ The AI will receive a list of products. Instruct it to format the response like 
 > 
 > [Image]
 > 
-> [Click here to view and checkout](https://fashion-redemption.com/product/[id])"
+> [Click here to view and checkout](https://fashion-redemption.vercel.app/product/[id])"
 
 **Note:** Use the `id` field from the product object to construct the checkout link.
 
