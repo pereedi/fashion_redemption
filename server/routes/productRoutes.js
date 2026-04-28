@@ -22,9 +22,9 @@ router.get('/search', async (req, res) => {
 // GET all products with filtering, sorting, and pagination
 router.get('/', async (req, res) => {
   try {
-    const { category, type, sort, q, page = 1, limit = 12, filter } = req.query;
+    const { category, type, sort, q, page = 1, limit = 12, filter, color, minPrice, maxPrice } = req.query;
 
-    console.log('Product query params:', { category, type, sort, q, page, limit, filter });
+    console.log('Product query params:', { category, type, sort, q, page, limit, filter, color, minPrice, maxPrice });
 
     // Using ProductRepository for centralized logic
     const { products, total } = await ProductRepository.getAll({
@@ -34,7 +34,10 @@ router.get('/', async (req, res) => {
       sort,
       page: parseInt(page),
       limit: parseInt(limit),
-      filter
+      filter,
+      color,
+      minPrice,
+      maxPrice
     });
 
     res.json({

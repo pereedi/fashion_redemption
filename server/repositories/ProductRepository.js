@@ -97,6 +97,20 @@ class ProductRepository {
         .slice(0, 4);
     }
 
+    if (filters.color && filters.color !== 'undefined') {
+      filtered = filtered.filter(p => 
+        p.colors.some(c => c.toLowerCase().includes(filters.color.toLowerCase()))
+      );
+    }
+
+    if (filters.minPrice !== undefined && filters.minPrice !== 'undefined') {
+      filtered = filtered.filter(p => p.base_price >= parseFloat(filters.minPrice));
+    }
+
+    if (filters.maxPrice !== undefined && filters.maxPrice !== 'undefined') {
+      filtered = filtered.filter(p => p.base_price <= parseFloat(filters.maxPrice));
+    }
+
     return {
       products: filtered,
       total: filtered.length
@@ -161,6 +175,24 @@ class ProductRepository {
 
       if (filters.filter === 'sale') {
         query = query.orderBy('products.created_at', 'desc');
+      }
+
+      // Filter by color (requires joining with variants)
+      if (filters.color && filters.color !== 'undefined') {
+        query = query.whereIn('products.id', function() {
+          this.select('product_id')
+            .from('product_variants')
+            .whereRaw('LOWER(color) LIKE ?', [`%${filters.color.toLowerCase()}%`]);
+        });
+      }
+
+      // Filter by price range
+      if (filters.minPrice !== undefined && filters.minPrice !== 'undefined') {
+        query = query.where('products.base_price', '>=', parseFloat(filters.minPrice));
+      }
+
+      if (filters.maxPrice !== undefined && filters.maxPrice !== 'undefined') {
+        query = query.where('products.base_price', '<=', parseFloat(filters.maxPrice));
       }
 
       const { page = 1, limit = 12 } = filters;

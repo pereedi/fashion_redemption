@@ -1,0 +1,194 @@
+export const generateDocsHTML = (productDocs, aiDocs) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fashion Redemption | API Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --sidebar-bg: #1e293b;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --code-bg: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 300px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        nav h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            margin: 1.5rem 0 0.5rem;
+        }
+
+        nav ul { list-style: none; }
+        nav li a {
+            display: block;
+            padding: 0.5rem 0;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+            font-size: 0.95rem;
+        }
+        nav li a:hover { color: var(--text); }
+        nav li a.active { color: var(--primary); font-weight: 600; }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            margin-left: 300px;
+            padding: 4rem 10%;
+            max-width: 1200px;
+        }
+
+        .content-section {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+        .content-section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+        h2 { font-size: 1.8rem; margin-top: 3rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.3rem; margin-top: 2rem; margin-bottom: 0.75rem; }
+        
+        p { margin-bottom: 1.5rem; color: var(--text-muted); }
+        
+        code { font-family: 'Fira Code', monospace; font-size: 0.9em; }
+        
+        pre {
+            background: var(--code-bg) !important;
+            padding: 1.5rem !important;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-right: 0.5rem;
+        }
+        .badge-get { background: #0ea5e920; color: #0ea5e9; border: 1px solid #0ea5e940; }
+        .badge-post { background: #10b98120; color: #10b981; border: 1px solid #10b98140; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+        th { text-align: left; background: var(--sidebar-bg); padding: 0.75rem; border: 1px solid var(--border); }
+        td { padding: 0.75rem; border: 1px solid var(--border); }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            aside { width: 100%; height: auto; position: relative; }
+            main { margin-left: 0; padding: 2rem; }
+            body { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <aside>
+        <div class="logo">Fashion Redemption</div>
+        <nav>
+            <h3>Documentation</h3>
+            <ul>
+                <li><a href="#product-api" class="nav-link active">Product API</a></li>
+                <li><a href="#ai-integration" class="nav-link">AI Integration</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <div id="product-api" class="content-section active"></div>
+        <div id="ai-integration" class="content-section"></div>
+    </main>
+
+    <script>
+        // Load Content
+        const productDocs = \`${productDocs.replace(/`/g, '\\`').replace(/\${/g, '\\${')}\`;
+        const aiDocs = \`${aiDocs.replace(/`/g, '\\`').replace(/\${/g, '\\${')}\`;
+
+        document.getElementById('product-api').innerHTML = marked.parse(productDocs);
+        document.getElementById('ai-integration').innerHTML = marked.parse(aiDocs);
+
+        // Navigation
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.content-section');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+
+                sections.forEach(s => s.classList.remove('active'));
+                document.getElementById(targetId).classList.add('active');
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+
+        // Initialize Prism
+        document.querySelectorAll('pre code').forEach((block) => {
+            Prism.highlightElement(block);
+        });
+    </script>
+</body>
+</html>
+\`;

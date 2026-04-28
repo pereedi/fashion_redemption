@@ -10,6 +10,13 @@ import db from './config/db.js';
 import analyticsService from './services/analyticsService.js';
 import ProductRepository from './repositories/ProductRepository.js';
 import { logger } from './utils/logger.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { generateDocsHTML } from './utils/docsTemplate.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -56,6 +63,25 @@ app.get('/health', (req, res) => {
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Fashion Redemption Server is running' });
 });
+
+// API Documentation Route
+app.get('/docs', (req, res) => {
+  try {
+    const productDocsPath = path.join(__dirname, 'docs', 'PRODUCT_API_DOCS.md');
+    const aiDocsPath = path.join(__dirname, 'docs', 'AI_BOT_INTEGRATION.md');
+
+    const productDocs = fs.readFileSync(productDocsPath, 'utf8');
+    const aiDocs = fs.readFileSync(aiDocsPath, 'utf8');
+
+    const html = generateDocsHTML(productDocs, aiDocs);
+    res.send(html);
+  } catch (err) {
+    logger.error('Failed to serve documentation', { error: err.message });
+    res.status(500).send('Documentation not available. Please ensure .md files exist in server/docs/');
+  }
+});
+
+app.get('/api/docs', (req, res) => res.redirect('/docs'));
 
 // Seed endpoint (call once to add products with Google Drive images)
 app.post('/api/seed-products', async (req, res) => {
