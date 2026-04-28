@@ -44,6 +44,7 @@ export const generateDocsHTML = (productDocs, aiDocs) => `
             position: fixed;
             height: 100vh;
             overflow-y: auto;
+            z-index: 100;
         }
 
         .logo {
@@ -94,9 +95,9 @@ export const generateDocsHTML = (productDocs, aiDocs) => `
             to { opacity: 1; transform: translateY(0); }
         }
 
-        h1 { font-size: 2.5rem; margin-bottom: 1rem; }
-        h2 { font-size: 1.8rem; margin-top: 3rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
-        h3 { font-size: 1.3rem; margin-top: 2rem; margin-bottom: 0.75rem; }
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #fff; }
+        h2 { font-size: 1.8rem; margin-top: 3rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; color: #fff; }
+        h3 { font-size: 1.3rem; margin-top: 2rem; margin-bottom: 0.75rem; color: #fff; }
         
         p { margin-bottom: 1.5rem; color: var(--text-muted); }
         
@@ -157,13 +158,17 @@ export const generateDocsHTML = (productDocs, aiDocs) => `
         <div id="ai-integration" class="content-section"></div>
     </main>
 
-    <script>
-        // Load Content
-        const productDocs = \`${productDocs.replace(/`/g, '\\`').replace(/\${/g, '\\${')}\`;
-        const aiDocs = \`${aiDocs.replace(/`/g, '\\`').replace(/\${/g, '\\${')}\`;
+    <!-- Content Store (Prevents Syntax Errors in JS) -->
+    <template id="product-docs-raw">${productDocs}</template>
+    <template id="ai-docs-raw">${aiDocs}</template>
 
-        document.getElementById('product-api').innerHTML = marked.parse(productDocs);
-        document.getElementById('ai-integration').innerHTML = marked.parse(aiDocs);
+    <script>
+        // Load Content safely from templates
+        const productDocsRaw = document.getElementById('product-docs-raw').innerHTML;
+        const aiDocsRaw = document.getElementById('ai-docs-raw').innerHTML;
+
+        document.getElementById('product-api').innerHTML = marked.parse(productDocsRaw);
+        document.getElementById('ai-integration').innerHTML = marked.parse(aiDocsRaw);
 
         // Navigation
         const navLinks = document.querySelectorAll('.nav-link');
@@ -185,8 +190,10 @@ export const generateDocsHTML = (productDocs, aiDocs) => `
         });
 
         // Initialize Prism
-        document.querySelectorAll('pre code').forEach((block) => {
-            Prism.highlightElement(block);
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('pre code').forEach((block) => {
+                Prism.highlightElement(block);
+            });
         });
     </script>
 </body>
