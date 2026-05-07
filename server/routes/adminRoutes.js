@@ -139,13 +139,8 @@ router.get('/dashboard-stats', async (req, res) => {
     const products = productsResult.products || [];
     const totalProducts = productsResult.total || 0;
 
-    // For presentation, use DuckDB for some of these
     const totalRevenue = orders.reduce((acc, o) => acc + (o.status !== 'cancelled' ? parseFloat(o.total) : 0), 0);
-    
-    // Recent orders snippet (already handled by repo sorting)
     const recentOrders = orders.slice(0, 5);
-
-    // Low stock snippet
     const lowStockProducts = products.filter(p => p.stock <= 5).slice(0, 5);
 
     res.json({ 
@@ -164,13 +159,12 @@ router.get('/dashboard-stats', async (req, res) => {
 // --- ANALYTICS ---
 router.get('/analytics', async (req, res) => {
   try {
-    // 1. Trigger DuckDB Sync
+    const { timeframe } = req.query;
     await AnalyticsService.syncFromMySQL();
-    
-    // 2. Query DuckDB
-    const revenueByDay = await AnalyticsService.getSalesReport();
+    const salesReport = await AnalyticsService.getSalesReport(timeframe);
+    const categoryReport = await AnalyticsService.getCategoryReport();
 
-    res.json({ revenueByDay });
+    res.json({ salesReport, categoryReport });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

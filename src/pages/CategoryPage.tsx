@@ -29,7 +29,11 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ gender: propGender }) => {
     });
 
     const handleFilterChange = (newFilters: any) => {
-        setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
+        setFilters(prev => ({ 
+            ...prev, 
+            ...newFilters, 
+            page: newFilters.page !== undefined ? newFilters.page : 1 
+        }));
     };
 
     return (

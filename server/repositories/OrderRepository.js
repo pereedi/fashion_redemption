@@ -78,6 +78,15 @@ class OrderRepository {
               if (!updated && item.quantity > 0) {
                 throw new Error(`Insufficient stock for product ${item.name} (${item.size})`);
               }
+
+              // Check if stock is now zero and notify admin
+              const currentVariant = await trx('product_variants')
+                .where({ product_id: product.id, size: item.size })
+                .first();
+              
+              if (currentVariant && currentVariant.stock === 0) {
+                logger.warn(`CRITICAL: Product ${item.name} (Size: ${item.size}) is now OUT OF STOCK.`, { productId: item.id });
+              }
             }
 
             return {

@@ -12,19 +12,35 @@ interface CollectionsPageProps {
     filter?: string;
 }
 
-const CollectionsPage: React.FC<CollectionsPageProps> = ({ filter }) => {
+const CollectionsPage: React.FC<CollectionsPageProps> = ({ filter: initialFilter }) => {
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+    const [filters, setFilters] = useState({
+        type: '',
+        size: '',
+        color: '',
+        sort: 'newest',
+        page: 1,
+        filter: initialFilter || ''
+    });
+
+    const handleFilterChange = (newFilters: any) => {
+        setFilters(prev => ({ 
+            ...prev, 
+            ...newFilters, 
+            page: newFilters.page !== undefined ? newFilters.page : 1 
+        }));
+    };
 
     return (
         <div className="bg-white min-h-screen">
             <CollectionsNavbar />
-            {filter === 'sale' && <SaleBanner />}
+            {initialFilter === 'sale' && <SaleBanner />}
             <div className="container mx-auto px-4 md:px-8 py-8">
-                <Breadcrumbs items={[{ label: 'HOME', href: '/' }, { label: filter ? filter.toUpperCase().replace('-', ' ') : 'SHOP ALL COLLECTIONS' }]} />
+                <Breadcrumbs items={[{ label: 'HOME', href: '/' }, { label: initialFilter ? initialFilter.toUpperCase().replace('-', ' ') : 'SHOP ALL COLLECTIONS' }]} />
 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mt-6 mb-12 gap-4">
                     <h1 className="text-4xl md:text-5xl font-serif tracking-tight uppercase">
-                        {filter === 'new' ? 'NEW ARRIVALS' : filter === 'sale' ? 'SEASONAL SALE' : 'ALL COLLECTIONS'}
+                        {initialFilter === 'new' ? 'NEW ARRIVALS' : initialFilter === 'sale' ? 'SEASONAL SALE' : 'ALL COLLECTIONS'}
                     </h1>
 
                     <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end border-b md:border-none pb-4 md:pb-0">
@@ -37,30 +53,34 @@ const CollectionsPage: React.FC<CollectionsPageProps> = ({ filter }) => {
 
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] font-bold text-black/40 tracking-widest uppercase">Sort By:</span>
-                            <div className="relative group">
-                                <button className="text-xs font-bold tracking-widest uppercase flex items-center gap-1 border-b border-black pb-1">
-                                    Newest Arrivals <ChevronDown size={14} />
-                                </button>
-                                {/* Dropdown would go here in a real app */}
-                            </div>
+                            <select 
+                                className="text-xs font-bold tracking-widest uppercase bg-transparent border-none outline-none cursor-pointer"
+                                value={filters.sort}
+                                onChange={(e) => handleFilterChange({ sort: e.target.value })}
+                            >
+                                <option value="newest">Newest Arrivals</option>
+                                <option value="price_asc">Price: Low to High</option>
+                                <option value="price_desc">Price: High to Low</option>
+                                <option value="popular">Most Popular</option>
+                            </select>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex gap-12 relative">
-                    {/* Sidebar - Desktop */}
                     <aside className="hidden md:block w-64 flex-shrink-0">
-                        <FilterSidebar />
+                        <FilterSidebar onFilterChange={handleFilterChange} />
                     </aside>
 
-                    {/* Main Content */}
                     <main className="flex-grow">
-                        <ProductGrid filters={filter ? { filter } : {}} />
+                        <ProductGrid 
+                            filters={filters} 
+                            onPageChange={(page) => handleFilterChange({ page })}
+                        />
                     </main>
                 </div>
             </div>
 
-            {/* Mobile Filter Overlay */}
             <AnimatePresence>
                 {isMobileFilterOpen && (
                     <>
@@ -84,7 +104,7 @@ const CollectionsPage: React.FC<CollectionsPageProps> = ({ filter }) => {
                                     <X size={24} />
                                 </button>
                             </div>
-                            <FilterSidebar />
+                            <FilterSidebar onFilterChange={handleFilterChange} />
                         </motion.div>
                     </>
                 )}

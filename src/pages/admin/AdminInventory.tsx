@@ -54,7 +54,10 @@ const AdminInventory = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ stock: Number(formData.stock) })
+        body: JSON.stringify({ 
+          name: formData.name,
+          stock: Number(formData.stock) 
+        })
       });
 
       if (res.ok) {
@@ -66,13 +69,32 @@ const AdminInventory = () => {
       }
     } catch (error) {
       console.error('Submit error:', error);
-      alert('An error occurred while updating the stock.');
+      alert('An error occurred while updating the inventory.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const columns: Column<any>[] = [
+    {
+      header: 'Product',
+      cell: (row: any) => (
+        <div className="flex items-center gap-3">
+          {row.images && row.images[0] && (
+            <img src={row.images[0]} alt="" className="w-10 h-10 rounded object-cover border border-gray-100 shadow-sm" />
+          )}
+          <div>
+            <p className="text-sm font-bold text-black uppercase leading-tight line-clamp-1">{row.name}</p>
+            <p className="text-[10px] text-gray-400 font-bold tracking-widest">{row.category}</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      header: 'ID',
+      accessorKey: 'id' as any,
+      cell: (row: any) => <span className="text-[10px] font-mono text-gray-400 font-bold">#{row.id}</span>
+    },
     { 
       header: 'Detailed Stock Status', 
       cell: (row: any) => {
@@ -102,11 +124,12 @@ const AdminInventory = () => {
   ];
 
   const actions = [
-    { icon: 'edit' as const, onClick: handleEdit, title: 'Update Stock' }
+    { icon: 'edit' as const, onClick: handleEdit, title: 'Edit Product' }
   ];
 
   const formFields: FormField[] = [
-    { name: 'stock', label: 'Stock Quantity', type: 'number', required: true }
+    { name: 'name', label: 'Product Name', type: 'text', required: true },
+    { name: 'stock', label: 'Stock Quantity (Total)', type: 'number', required: true }
   ];
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -159,7 +182,7 @@ const AdminInventory = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg flex flex-col animate-fade-in">
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
               <h2 className="text-xl font-serif font-bold tracking-tight uppercase">
-                Update Stock Quantity
+                Edit Inventory Item
               </h2>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -182,10 +205,13 @@ const AdminInventory = () => {
 
               <DynamicForm 
                 fields={formFields} 
-                initialData={{ stock: editingProduct?.stock }}
+                initialData={{ 
+                  name: editingProduct?.name,
+                  stock: editingProduct?.stock 
+                }}
                 onSubmit={handleSubmit}
                 onCancel={() => setIsModalOpen(false)}
-                submitLabel="Update Inventory"
+                submitLabel="Save Changes"
                 isLoading={isSubmitting}
               />
             </div>

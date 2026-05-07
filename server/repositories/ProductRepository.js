@@ -13,14 +13,14 @@ class ProductRepository {
         external_id: `bulk_${index + 1}`,
         name: p.name,
         description: p.description,
-        category: p.category.toLowerCase(), // frontend expects lowercase Usually
+        category: p.category.toLowerCase(),
         type: p.type.toLowerCase(),
         base_price: p.base_price,
         basePrice: p.base_price,
         price: `Esp ${p.base_price.toLocaleString()}`,
         rating: p.rating,
         review_count: p.review_count,
-        created_at: new Date(Date.now() - index * 10000), // give them slight logical ordering
+        created_at: new Date(Date.now() - index * 10000),
         image: `/images/products/${sanitizedName}_1.jpg`,
         images: p.images.map((img, i) => `/images/products/${sanitizedName}_${i + 1}.jpg`),
         sizes: p.variants ? [...new Set(p.variants.map(v => v.size))] : [],
@@ -32,7 +32,6 @@ class ProductRepository {
       };
     });
 
-    // Add back the exactly requested Men's products pointing to the original remaining images
     sampleProducts.push({
       id: 'bulk_99',
       internal_id: 'bulk_99',
@@ -87,7 +86,6 @@ class ProductRepository {
       filtered = filtered.filter(p => p.type.toLowerCase() === filters.type.toLowerCase());
     }
 
-    // Special filters
     if (filters.filter === 'new') {
       filtered = filtered.sort((a, b) => b.created_at - a.created_at).slice(0, 12);
     }
@@ -119,39 +117,36 @@ class ProductRepository {
 
   getFallbackImages() {
     return [
-      '/images/products/product_1.jpg',
-      '/images/products/product_2.jpg',
-      '/images/products/product_3.jpg',
-      '/images/products/product_5.jpg'
+      '/images/products/women_elegant_pleated_midi_dress_1.jpg',
+      '/images/products/women_tailored_power_suit_1.jpg',
+      '/images/products/women_relaxed_linen_suit_1.jpg',
+      '/images/products/girls_floral_halter_neck_dress_1.jpg',
+      '/images/products/boys_ribbed_knit_hoodie_sweater_1.jpg',
+      '/images/products/women_ribbed_knit_bodycon_dress_1.jpg',
+      '/images/products/girls_bow_detail_tiered_dress_1.jpg'
     ];
   }
 
   async getAll(filters = {}) {
-    // Validate filters parameter
     if (!filters || typeof filters !== 'object') {
       filters = {};
     }
 
     try {
-      // Build base query
       let query = db('products').select('products.*');
 
-      // Apply category filter (case-insensitive)
       if (filters.category && filters.category !== 'undefined') {
         query = query.whereRaw('LOWER(category) = ?', [filters.category.toLowerCase()]);
       }
 
-      // Apply type filter (case-insensitive)
       if (filters.type && filters.type !== 'undefined' && filters.type !== '') {
         query = query.whereRaw('LOWER(type) = ?', [filters.type.toLowerCase()]);
       }
 
-      // Apply name filter (search)
       if (filters.name) {
         query = query.where('products.name', 'like', `%${filters.name}%`);
       }
 
-      // Apply general search query
       if (filters.q && filters.q !== 'undefined') {
         query = query.where(function () {
           this.where('products.name', 'like', `%${filters.q}%`)
@@ -159,13 +154,11 @@ class ProductRepository {
         });
       }
 
-      // Apply special filters
       if (filters.filter === 'new') {
         query = query.orderBy('products.created_at', 'desc').limit(12);
       }
 
       if (filters.filter === 'trending') {
-        // Trending: Specifically for women, not in the top 4 most recent
         const newArrivalIds = await db('products').orderBy('created_at', 'desc').limit(4).pluck('id');
         query = query.whereRaw('LOWER(category) = ?', ['women'])
           .whereNotIn('products.id', newArrivalIds)
@@ -177,7 +170,6 @@ class ProductRepository {
         query = query.orderBy('products.created_at', 'desc');
       }
 
-      // Filter by color (requires joining with variants)
       if (filters.color && filters.color !== 'undefined') {
         query = query.whereIn('products.id', function() {
           this.select('product_id')
@@ -186,7 +178,6 @@ class ProductRepository {
         });
       }
 
-      // Filter by price range
       if (filters.minPrice !== undefined && filters.minPrice !== 'undefined') {
         query = query.where('products.base_price', '>=', parseFloat(filters.minPrice));
       }
@@ -209,12 +200,10 @@ class ProductRepository {
 
       const total = countResult?.total || 0;
 
-      // REMOVED AUTOMATIC FALLBACK: Give user total control over their catalog
       if (products.length === 0) {
         return { products: [], total: 0 };
       }
 
-      // Fetch all images and variants for these products
       const productIds = products.map(p => p.id);
 
       const [images, variants] = await Promise.all([
@@ -325,11 +314,9 @@ class ProductRepository {
   async create(productData) {
     const { images, variants, ...baseData } = productData;
     
-    // 1. Sanitize baseData for MySQL
     const allowedColumns = ['external_id', 'name', 'description', 'category', 'type', 'base_price', 'rating', 'review_count', 'on_sale', 'sale_price'];
     const sanitizedData = {};
     
-    // Map basePrice to base_price if needed
     if (baseData.basePrice !== undefined) baseData.base_price = baseData.basePrice;
     
     allowedColumns.forEach(col => {
@@ -378,7 +365,6 @@ class ProductRepository {
   async update(id, data) {
     const { images, variants, ...baseData } = data;
     
-    // 1. Sanitize baseData for MySQL
     const allowedColumns = ['external_id', 'name', 'description', 'category', 'type', 'base_price', 'rating', 'review_count', 'on_sale', 'sale_price'];
     const sanitizedData = {};
     
@@ -392,7 +378,6 @@ class ProductRepository {
     
     return db.transaction(async (trx) => {
       try {
-        // 1. Update base product
         const updated = await trx('products').where('external_id', id).update(sanitizedData);
         if (!updated) {
           await trx('products').where('id', id).update(sanitizedData);
@@ -401,7 +386,6 @@ class ProductRepository {
         const product = await trx('products').where('external_id', id).first() || await trx('products').where('id', id).first();
         if (!product) return null;
 
-        // 2. Update images
         if (images) {
           await trx('product_images').where('product_id', product.id).del();
           if (images.length > 0) {
@@ -415,7 +399,6 @@ class ProductRepository {
           }
         }
 
-        // 3. Update variants
         if (variants) {
           await trx('product_variants').where('product_id', product.id).del();
           if (variants.length > 0) {
@@ -444,8 +427,6 @@ class ProductRepository {
       const product = await db('products').where('external_id', id).first() || await db('products').where('id', id).first();
       if (!product) return false;
 
-      // Knex handles cascading if migrations are set up, but let's be explicit if needed
-      // Actually, let's just delete the product and let MySQL handles foreign keys if set to CASCADE
       const deleted = await db('products').where('id', product.id).del();
       return !!deleted;
     } catch (err) {

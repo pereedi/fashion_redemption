@@ -8,9 +8,9 @@ import PaymentMethodSelector from '../components/checkout/PaymentMethodSelector'
 import CardForm from '../components/checkout/CardForm';
 import OrderSummary from '../components/checkout/OrderSummary';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/layout/Navbar';
 import API_BASE_URL from '../config/api';
-
 
 type CheckoutStep = 'cart' | 'information' | 'shipping' | 'payment';
 
@@ -42,10 +42,40 @@ const CheckoutPage: React.FC = () => {
   const discount = 15.00;
   const total = totalSubtotal + (currentShipping?.price || 0) + tax - discount;
 
+  const { token, isAuthenticated } = useAuth();
+
   // Scroll to top on step change
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [step]);
+
+  // Fetch user data for pre-fill
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (isAuthenticated && token) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (response.ok) {
+            const result = await response.json();
+            const userData = result.data.user;
+            setFormData(prev => ({
+              ...prev,
+              fullName: userData.name || prev.fullName,
+              email: userData.email || prev.email,
+              address: userData.address || prev.address,
+              city: userData.city || prev.city,
+              postalCode: userData.postalCode || prev.postalCode
+            }));
+          }
+        } catch (err) {
+          console.error('Failed to fetch user data for checkout', err);
+        }
+      }
+    };
+    fetchUserData();
+  }, [isAuthenticated, token]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -242,8 +272,6 @@ const CheckoutPage: React.FC = () => {
           </div>
         </div>
       </main>
-
-
     </div>
   );
 };

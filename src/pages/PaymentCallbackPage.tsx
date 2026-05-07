@@ -88,9 +88,15 @@ const PaymentCallbackPage: React.FC = () => {
               </div>
               <div className="space-y-4">
                 <h2 className="text-3xl font-serif uppercase tracking-tight">Payment Successful</h2>
-                <p className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase">
-                  Your order has been confirmed. A receipt with shipping details has been sent to your email.
-                </p>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase">
+                    Your order has been confirmed. A receipt with shipping details has been sent to your email.
+                  </p>
+                  <div className="mt-6 p-4 bg-light-gray/20 rounded border border-black/5">
+                    <p className="text-[11px] font-bold tracking-widest uppercase text-black/60 mb-1">Estimated Delivery</p>
+                    <p className="text-sm font-serif italic text-luxury-red">5 - 10 Business Days</p>
+                  </div>
+                </div>
               </div>
               <button 
                 onClick={() => navigate('/profile')}
@@ -109,9 +115,9 @@ const PaymentCallbackPage: React.FC = () => {
                 </div>
               </div>
               <div className="space-y-4">
-                <h2 className="text-3xl font-serif uppercase tracking-tight">Payment Failed</h2>
+                <h2 className="text-3xl font-serif uppercase tracking-tight">Transaction Failed</h2>
                 <p className="text-sm text-black/60 italic font-serif">
-                  {message}
+                  {message || 'Your transaction could not be processed at this time. Please check your payment details and try again.'}
                 </p>
               </div>
               <div className="pt-4 space-y-4">

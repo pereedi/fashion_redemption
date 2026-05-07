@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { TrendingUp, ShoppingCart, Users, DollarSign } from 'lucide-react';
+import { TrendingUp, ShoppingCart, Users, DollarSign, Eye, EyeOff, Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import logo from '../../assets/logo.png';
 import API_BASE_URL from '../../config/api';
@@ -16,6 +17,21 @@ const AdminDashboard = () => {
     lowStockProducts: []
   });
   const [loading, setLoading] = useState(true);
+  const [isRevenueVisible, setIsRevenueVisible] = useState(false);
+  const [pin, setPin] = useState('');
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+
+  const handlePinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pin === '1234') { // Default PIN
+      setIsRevenueVisible(true);
+      setIsPinModalOpen(false);
+      setPin('');
+    } else {
+      alert('Incorrect PIN');
+      setPin('');
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
@@ -61,8 +77,18 @@ const AdminDashboard = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 relative overflow-hidden">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-1">Total Revenue</p>
-              <h3 className="text-3xl font-bold">Esp {stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+              <p className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-1 flex items-center gap-2">
+                Total Revenue 
+                <button 
+                  onClick={() => isRevenueVisible ? setIsRevenueVisible(false) : setIsPinModalOpen(true)}
+                  className="text-luxury-red hover:text-black transition-colors"
+                >
+                  {isRevenueVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </p>
+              <h3 className={`text-3xl font-bold transition-all duration-500 ${!isRevenueVisible ? 'blur-md select-none' : ''}`}>
+                Esp {stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </h3>
             </div>
             <div className="p-2 bg-green-50 rounded-md">
               <TrendingUp className="text-green-600" size={20} />
@@ -187,10 +213,10 @@ const AdminDashboard = () => {
               <div className="p-6 text-center text-sm text-gray-500">All products are adequately stocked.</div>
             ) : (
               stats.lowStockProducts.map((product: any) => (
-                <div key={product.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                <div key={`${product.id}-${product.size}`} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                   <div>
                     <p className="text-sm font-medium text-black line-clamp-1">{product.name}</p>
-                    <p className="text-xs text-gray-500">ID: {product.id}</p>
+                    <p className="text-xs text-gray-500">ID: {product.id} {product.size && `| Size: ${product.size}`}</p>
                   </div>
                   <div className="text-right">
                     <span className={`px-2 py-1 text-xs font-bold rounded-md ${product.stock === 0 ? 'bg-red-100 text-luxury-red' : 'bg-orange-100 text-orange-800'}`}>
@@ -203,6 +229,51 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* PIN Modal */}
+      {isPinModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center space-y-6"
+          >
+            <div className="w-16 h-16 bg-luxury-red/10 text-luxury-red rounded-full flex items-center justify-center mx-auto">
+              <Lock size={32} />
+            </div>
+            <div>
+              <h3 className="text-xl font-serif font-bold uppercase tracking-tight">Security Check</h3>
+              <p className="text-xs text-gray-500 mt-2">Enter your 4-digit PIN to view sensitive revenue data.</p>
+            </div>
+            <form onSubmit={handlePinSubmit} className="space-y-4">
+              <input 
+                type="password"
+                maxLength={4}
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                placeholder="••••"
+                autoFocus
+                className="w-full text-center text-2xl tracking-[1em] py-4 border-2 border-gray-100 rounded-lg focus:border-luxury-red outline-none transition-all"
+              />
+              <div className="flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsPinModalOpen(false)}
+                  className="flex-1 py-4 text-xs font-bold tracking-widest uppercase text-gray-400 hover:text-black transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 py-4 bg-black text-white text-xs font-bold tracking-widest uppercase rounded-lg hover:bg-luxury-red transition-all"
+                >
+                  Verify
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

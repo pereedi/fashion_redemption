@@ -32,7 +32,7 @@ class AnalyticsService {
         .join('order_items', 'orders.id', 'order_items.order_id')
         .join('products', 'order_items.product_id', 'products.id');
 
-      // Clear existing duckdb data for a fresh sync (simple approach for presentation)
+      // Clear existing duckdb data
       this.con.run('DELETE FROM sales_data');
 
       const stmt = this.con.prepare('INSERT INTO sales_data VALUES (?, ?, ?, ?)');
@@ -48,9 +48,34 @@ class AnalyticsService {
     }
   }
 
-  async getSalesReport() {
+  async getSalesReport(timeframe = 'daily') {
+    let groupBy = "strftime('%Y-%m-%d', created_at)";
+    let orderBy = "1 ASC";
+
+    if (timeframe === 'weekly') {
+      groupBy = "strftime('%Y-W%W', created_at)";
+    } else if (timeframe === 'monthly') {
+      groupBy = "strftime('%Y-%m', created_at)";
+    } else if (timeframe === 'annual') {
+      groupBy = "strftime('%Y', created_at)";
+    }
+
     return new Promise((resolve, reject) => {
-      this.con.all('SELECT category, SUM(total) as revenue, COUNT(*) as orders FROM sales_data GROUP BY 1 ORDER BY 2 DESC', (err, res) => {
+      this.con.all(`
+        SELECT ${groupBy} as label, SUM(total) as revenue, COUNT(DISTINCT order_id) as orders 
+        FROM sales_data 
+        GROUP BY 1 
+        ORDER BY ${orderBy}
+      `, (err, res) => {
+        if (err) reject(err);
+        else resolve(res);
+      });
+    });
+  }
+
+  async getCategoryReport() {
+    return new Promise((resolve, reject) => {
+      this.con.all('SELECT category, SUM(total) as revenue, COUNT(DISTINCT order_id) as orders FROM sales_data GROUP BY 1 ORDER BY 2 DESC', (err, res) => {
         if (err) reject(err);
         else resolve(res);
       });

@@ -174,6 +174,9 @@ router.post('/login', async (req, res) => {
           name: fullUser.name,
           email: fullUser.email,
           role: fullUser.role,
+          address: fullUser.address,
+          city: fullUser.city,
+          postalCode: fullUser.postal_code,
           wishlist: fullUser.wishlist || []
         }
       }
@@ -196,6 +199,42 @@ router.post('/login', async (req, res) => {
     }
     
     res.status(statusCode).json({ message });
+  }
+});
+
+// GET /api/auth/me
+router.get('/me', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'redemption-secret');
+    const user = await UserRepository.findById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      status: 'success',
+      data: {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          address: user.address,
+          city: user.city,
+          postalCode: user.postal_code,
+          wishlist: user.wishlist || []
+        }
+      }
+    });
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid token' });
   }
 });
 

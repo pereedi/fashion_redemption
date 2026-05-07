@@ -14,7 +14,11 @@ const SearchResultsPage: React.FC = () => {
     });
 
     const handleFilterChange = (newFilters: any) => {
-        setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
+        setFilters(prev => ({ 
+            ...prev, 
+            ...newFilters, 
+            page: newFilters.page !== undefined ? newFilters.page : 1 
+        }));
     };
 
     return (

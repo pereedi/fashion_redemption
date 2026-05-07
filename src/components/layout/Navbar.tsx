@@ -40,6 +40,7 @@ const Navbar: React.FC = () => {
                             className={({ isActive }) => `
                                 text-xs font-semibold tracking-[0.2em] py-1 transition-all border-b-2
                                 ${isActive ? 'border-luxury-red text-luxury-red' : 'border-transparent hover:border-luxury-red'}
+                                ${link.name === 'SALES' ? 'animate-shimmer-pulse text-luxury-red' : ''}
                             `}
                         >
                             {link.name}

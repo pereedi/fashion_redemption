@@ -27,10 +27,10 @@ const CartSummary: React.FC<CartSummaryProps> = ({ subtotal }) => {
       </div>
 
       <div className="space-y-4">
-        <Link to="/checkout">
-          <button className="w-full py-5 bg-luxury-red text-white text-[11px] font-bold tracking-[0.4em] uppercase rounded-sm flex items-center justify-center gap-3 hover:bg-black transition-all duration-500 shadow-lg shadow-luxury-red/10 group">
+        <Link to="/checkout" className="block">
+          <button className="w-full py-6 bg-luxury-red text-white text-[12px] font-bold tracking-[0.5em] uppercase rounded-sm flex items-center justify-center gap-4 hover:bg-black hover:scale-[1.02] active:scale-95 transition-all duration-500 shadow-xl shadow-luxury-red/20 group">
             PROCEED TO CHECKOUT 
-            <ArrowRight size={16} className="group-hover:translate-x-1.5 transition-transform duration-500" />
+            <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-500" />
           </button>
         </Link>
         <p className="text-center text-[9px] text-black/40 font-bold tracking-widest uppercase">
