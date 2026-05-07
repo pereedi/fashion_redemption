@@ -149,7 +149,7 @@ const AdminAnalytics = () => {
                   dataKey="revenue"
                   nameKey="category"
                 >
-                  {data.categoryReport.map((entry: any, index: number) => (
+                  {data.categoryReport.map((_: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -160,10 +160,10 @@ const AdminAnalytics = () => {
               </PieChart>
             </ResponsiveContainer>
             <div className="flex flex-col gap-3 pr-4">
-              {data.categoryReport.slice(0, 5).map((_entry: any, index: number) => (
-                <div key={_entry.category} className="flex items-center gap-2">
+              {data.categoryReport.slice(0, 5).map((entry: any, index: number) => (
+                <div key={entry.category} className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{_entry.category}</span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{entry.category}</span>
                 </div>
               ))}
             </div>
