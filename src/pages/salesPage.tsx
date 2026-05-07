@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Filter, X } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Breadcrumbs from '../components/ui/Breadcrumbs.tsx';
 import FilterSidebar from '../components/ui/FilterSidebar.tsx';
