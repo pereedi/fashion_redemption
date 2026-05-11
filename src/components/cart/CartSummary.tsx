@@ -1,13 +1,22 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useCart } from '../../context/CartContext';
 
 interface CartSummaryProps {
   subtotal: number;
 }
 
 const CartSummary: React.FC<CartSummaryProps> = ({ subtotal }) => {
+  const { setIsCartOpen } = useCart();
+  const navigate = useNavigate();
   const formattedSubtotal = `Esp ${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const handleCheckout = () => {
+    setIsCartOpen(false);
+    // Give the drawer exit animation time to complete before navigating
+    setTimeout(() => navigate('/checkout'), 320);
+  };
 
   return (
     <div className="space-y-6">
@@ -27,12 +36,13 @@ const CartSummary: React.FC<CartSummaryProps> = ({ subtotal }) => {
       </div>
 
       <div className="space-y-4">
-        <Link to="/checkout" className="block">
-          <button className="w-full py-6 bg-luxury-red text-white text-[12px] font-bold tracking-[0.5em] uppercase rounded-sm flex items-center justify-center gap-4 hover:bg-black hover:scale-[1.02] active:scale-95 transition-all duration-500 shadow-xl shadow-luxury-red/20 group">
-            PROCEED TO CHECKOUT 
-            <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-500" />
-          </button>
-        </Link>
+        <button
+          onClick={handleCheckout}
+          className="w-full py-6 bg-luxury-red text-white text-[12px] font-bold tracking-[0.5em] uppercase rounded-sm flex items-center justify-center gap-4 hover:bg-black hover:scale-[1.02] active:scale-95 transition-all duration-500 shadow-xl shadow-luxury-red/20 group"
+        >
+          PROCEED TO CHECKOUT
+          <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform duration-500" />
+        </button>
         <p className="text-center text-[9px] text-black/40 font-bold tracking-widest uppercase">
           COMPLIMENTARY SHIPPING & RETURNS ON ALL ORDERS.
         </p>

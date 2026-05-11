@@ -26,7 +26,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           });
           if (response.ok) {
             const data = await response.json();
-            setWishlistItems(data);
+            setWishlistItems((data as any[]).map(String));
           }
         } catch (err) {
           console.error('Failed to load wishlist:', err);
@@ -58,7 +58,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             });
             if (response.ok) {
               const data = await response.json();
-              setWishlistItems(data);
+              setWishlistItems((data as any[]).map(String));
               localStorage.removeItem('wishlist');
             }
           } catch (err) {
@@ -92,7 +92,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
         if (response.ok) {
           const data = await response.json();
-          setWishlistItems(data);
+          setWishlistItems((data as any[]).map(String));
         }
       } catch (err) {
         console.error('Failed to toggle wishlist:', err);
