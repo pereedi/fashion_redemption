@@ -16,12 +16,18 @@ const WishlistPage: React.FC = () => {
     useEffect(() => {
         const fetchWishlistProducts = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/products`);
-                const data = await response.json();
-                const allProducts = data.products || [];
-                // Filter products that are in the wishlistItems array
-                const filtered = allProducts.filter((p: any) => wishlistItems.includes(String(p.id)));
-                setProducts(filtered);
+                if (wishlistItems.length === 0) {
+                    setProducts([]);
+                    setLoading(false);
+                    return;
+                }
+                // Fetch each wishlisted product by its ID in parallel
+                const results = await Promise.all(
+                    wishlistItems.map(id =>
+                        fetch(`${API_BASE_URL}/api/products/${id}`).then(r => r.ok ? r.json() : null)
+                    )
+                );
+                setProducts(results.filter(Boolean));
             } catch (err) {
                 console.error('Failed to fetch wishlist products:', err);
             } finally {

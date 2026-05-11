@@ -32,13 +32,16 @@ const ProfilePage: React.FC = () => {
           }
         }
 
-        // Fetch Wishlist Products
-        const productsRes = await fetch(`${API_BASE_URL}/api/products`);
-        if (productsRes.ok) {
-          const data = await productsRes.json();
-          const allProducts = data.products || [];
-          const filtered = allProducts.filter((p: any) => wishlistItems.includes(String(p.id)));
-          setWishlistProducts(filtered);
+        // Fetch Wishlist Products by ID
+        if (wishlistItems.length > 0) {
+          const results = await Promise.all(
+            wishlistItems.map(id =>
+              fetch(`${API_BASE_URL}/api/products/${id}`).then(r => r.ok ? r.json() : null)
+            )
+          );
+          setWishlistProducts(results.filter(Boolean));
+        } else {
+          setWishlistProducts([]);
         }
       } catch (err) {
         console.error('Error fetching profile data:', err);
