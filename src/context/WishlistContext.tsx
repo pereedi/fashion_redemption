@@ -26,14 +26,21 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           });
           if (response.ok) {
             const data = await response.json();
-            setWishlistItems((data as any[]).map(String));
+            if (Array.isArray(data)) {
+              setWishlistItems(data.map(String));
+            }
           }
         } catch (err) {
           console.error('Failed to load wishlist:', err);
         }
       } else {
         const savedWishlist = localStorage.getItem('wishlist');
-        setWishlistItems(savedWishlist ? JSON.parse(savedWishlist) : []);
+        try {
+          const parsed = savedWishlist ? JSON.parse(savedWishlist) : [];
+          setWishlistItems(Array.isArray(parsed) ? parsed.map(String) : []);
+        } catch (e) {
+          setWishlistItems([]);
+        }
       }
       setIsInitialized(true);
     };
@@ -58,7 +65,9 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             });
             if (response.ok) {
               const data = await response.json();
-              setWishlistItems((data as any[]).map(String));
+              if (Array.isArray(data)) {
+                setWishlistItems(data.map(String));
+              }
               localStorage.removeItem('wishlist');
             }
           } catch (err) {
@@ -92,7 +101,9 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
         if (response.ok) {
           const data = await response.json();
-          setWishlistItems((data as any[]).map(String));
+          if (Array.isArray(data)) {
+            setWishlistItems(data.map(String));
+          }
         }
       } catch (err) {
         console.error('Failed to toggle wishlist:', err);

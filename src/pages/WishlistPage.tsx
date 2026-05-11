@@ -15,21 +15,39 @@ const WishlistPage: React.FC = () => {
 
     useEffect(() => {
         const fetchWishlistProducts = async () => {
+            console.log('WishlistPage: fetchWishlistProducts called with IDs:', wishlistItems);
             try {
                 if (wishlistItems.length === 0) {
+                    console.log('WishlistPage: Wishlist is empty in context');
                     setProducts([]);
                     setLoading(false);
                     return;
                 }
                 // Fetch each wishlisted product by its ID in parallel
+                console.log('WishlistPage: Fetching products for IDs:', wishlistItems);
                 const results = await Promise.all(
                     wishlistItems.map(id =>
-                        fetch(`${API_BASE_URL}/api/products/${id}`).then(r => r.ok ? r.json() : null)
+                        fetch(`${API_BASE_URL}/api/products/${id}`)
+                            .then(async r => {
+                                if (r.ok) {
+                                    const data = await r.json();
+                                    console.log(`WishlistPage: Successfully fetched product ${id}:`, data);
+                                    return data;
+                                }
+                                console.warn(`WishlistPage: Failed to fetch product ${id}, status: ${r.status}`);
+                                return null;
+                            })
+                            .catch(err => {
+                                console.error(`WishlistPage: Error fetching product ${id}:`, err);
+                                return null;
+                            })
                     )
                 );
-                setProducts(results.filter(Boolean));
+                const validProducts = results.filter(Boolean);
+                console.log('WishlistPage: Setting products state with:', validProducts);
+                setProducts(validProducts);
             } catch (err) {
-                console.error('Failed to fetch wishlist products:', err);
+                console.error('WishlistPage: Global fetch error:', err);
             } finally {
                 setLoading(false);
             }
