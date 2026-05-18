@@ -7,12 +7,19 @@ import ProductInfo from '../components/product/ProductInfo';
 import CompleteTheLook from '../components/product/CompleteTheLook';
 import ReviewSection from '../components/product/ReviewSection';
 import API_BASE_URL from '../config/api';
+import { useSEO } from '../hooks/useSEO';
 
 const ProductDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useSEO({ 
+    title: product ? product.name : 'Loading Product...',
+    description: product ? product.description : 'View our luxury products.',
+    image: product && product.images && product.images.length > 0 ? product.images[0] : undefined
+  });
 
   useEffect(() => {
     const fetchProduct = async () => {

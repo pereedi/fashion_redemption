@@ -7,6 +7,7 @@ import Breadcrumbs from '../components/ui/Breadcrumbs';
 import FilterSidebar from '../components/ui/FilterSidebar';
 import ProductGrid from '../sections/ProductGrid';
 import Newsletter from '../sections/Newsletter';
+import { useSEO } from '../hooks/useSEO';
 
 interface CategoryPageProps {
     gender?: 'men' | 'women' | 'kids';
@@ -19,6 +20,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ gender: propGender }) => {
         gender?.toUpperCase() === 'MEN' ? 'MEN COLLECTION' : 
         gender?.toUpperCase() === 'WOMEN' ? 'WOMEN COLLECTION' : 
         'KIDS COLLECTION';
+    useSEO({ title: categoryTitle, description: `Shop our latest ${gender} collection.` });
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [filters, setFilters] = useState({
         type: '',

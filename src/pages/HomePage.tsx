@@ -6,8 +6,10 @@ import NewArrivals from '../sections/NewArrivals';
 import SaleBanner from '../sections/SaleBanner';
 import Newsletter from '../sections/Newsletter';
 import Navbar from '../components/layout/Navbar';
+import { useSEO } from '../hooks/useSEO';
 
 const HomePage: React.FC = () => {
+    useSEO({ title: 'Home' });
     return (
         <>
             <Navbar />

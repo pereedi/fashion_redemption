@@ -7,6 +7,9 @@ export const CATEGORY_MAP: Record<string, { label: string; value: string; types:
       { label: 'Trousers & Chinos', value: 'trousers' },
       { label: 'Jeans', value: 'jeans' },
       { label: 'Suits & Blazers', value: 'suits' },
+      { label: '3-Piece Suits', value: '3-piece-suits' },
+      { label: 'Up-and-down Sets', value: 'up-and-down-sets' },
+      { label: 'Shirt and Trouser Sets', value: 'shirt-and-trouser-sets' },
       { label: 'Jackets & Hoodies', value: 'jackets' },
       { label: 'Shorts', value: 'shorts' },
     ]
@@ -20,6 +23,7 @@ export const CATEGORY_MAP: Record<string, { label: string; value: string; types:
       { label: 'Skirts', value: 'skirts' },
       { label: 'Pants & Trousers', value: 'pants' },
       { label: 'Jumpsuits', value: 'jumpsuits' },
+      { label: '3-Piece Sets', value: '3-piece-sets' },
       { label: 'Jackets & Hoodies', value: 'jackets' },
       { label: 'Denim', value: 'denim' },
     ]
@@ -31,6 +35,9 @@ export const CATEGORY_MAP: Record<string, { label: string; value: string; types:
       { label: 'Boys Clothing', value: 'boys' },
       { label: 'Girls Clothing', value: 'girls' },
       { label: 'Baby Wear', value: 'baby' },
+      { label: 'Footwear', value: 'footwear' },
+      { label: 'Bags', value: 'bags' },
+      { label: 'Cloth', value: 'cloth' },
     ]
   },
   footwear: {
@@ -54,6 +61,10 @@ export const CATEGORY_MAP: Record<string, { label: string; value: string; types:
       { label: 'Sunglasses', value: 'sunglasses' },
       { label: 'Jewelry', value: 'jewelry' },
       { label: 'Watches', value: 'watches' },
+      { label: 'Suspender', value: 'suspender' },
+      { label: 'Tie', value: 'tie' },
+      { label: 'Perfume', value: 'perfume' },
+      { label: 'Cufflinks', value: 'cufflinks' },
     ]
   }
 };

@@ -84,8 +84,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
             img.src = event.target?.result as string;
             img.onload = () => {
               const canvas = document.createElement('canvas');
-              const MAX_WIDTH = 800; // Efficient size for web
-              const MAX_HEIGHT = 800;
+              const MAX_WIDTH = 1600; // High resolution size
+              const MAX_HEIGHT = 1600;
               let width = img.width;
               let height = img.height;
 
@@ -105,8 +105,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               const ctx = canvas.getContext('2d');
               if (ctx) {
                 ctx.drawImage(img, 0, 0, width, height);
-                // Medium quality JPEG is much smaller than PNG or raw Base64
-                resolve(canvas.toDataURL('image/jpeg', 0.7));
+                // High quality JPEG
+                resolve(canvas.toDataURL('image/jpeg', 0.95));
               } else {
                 resolve(event.target?.result as string); // Fallback
               }
