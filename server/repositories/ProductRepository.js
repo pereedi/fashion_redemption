@@ -218,12 +218,12 @@ class ProductRepository {
         const primaryImage = productImages.find(img => img.is_primary) || productImages[0];
 
         const getImageUrl = () => {
-          if (primaryImage?.url) return primaryImage.url;
+          if (primaryImage?.url) return primaryImage.url.startsWith('data:image/') ? `/api/images/${primaryImage.id}` : primaryImage.url;
           return fallbackImages[Number(p.id) % fallbackImages.length] || fallbackImages[0];
         };
 
         const getAllImages = () => {
-          if (productImages.length > 0) return productImages.map(img => img.url);
+          if (productImages.length > 0) return productImages.map(img => img.url.startsWith('data:image/') ? `/api/images/${img.id}` : img.url);
           return fallbackImages;
         };
 
@@ -278,23 +278,25 @@ class ProductRepository {
 
       const relatedProducts = relatedProductsRaw.map(p => {
         const relatedImg = relatedImages.find(img => img.product_id === p.id);
+        const imgUrl = relatedImg?.url?.startsWith('data:image/') ? `/api/images/${relatedImg.id}` : relatedImg?.url;
         return {
           ...p,
           id: p.external_id,
           price: `Esp ${Number(p.base_price).toLocaleString()}`,
-          image: relatedImg?.url || fallbackImages[Number(p.id) % fallbackImages.length] || fallbackImages[0]
+          image: imgUrl || fallbackImages[Number(p.id) % fallbackImages.length] || fallbackImages[0]
         };
       });
 
       const primaryImage = images[0];
+      const primaryImgUrl = primaryImage?.url?.startsWith('data:image/') ? `/api/images/${primaryImage.id}` : primaryImage?.url;
 
       return {
         ...product,
         id: product.external_id,
         internal_id: product.id,
         price: `Esp ${Number(product.base_price).toLocaleString()}`,
-        image: primaryImage?.url || fallbackImages[Number(product.id) % fallbackImages.length] || fallbackImages[0],
-        images: images.length > 0 ? images.map(img => img.url) : fallbackImages,
+        image: primaryImgUrl || fallbackImages[Number(product.id) % fallbackImages.length] || fallbackImages[0],
+        images: images.length > 0 ? images.map(img => img.url.startsWith('data:image/') ? `/api/images/${img.id}` : img.url) : fallbackImages,
         variants,
         reviews,
         relatedProducts,

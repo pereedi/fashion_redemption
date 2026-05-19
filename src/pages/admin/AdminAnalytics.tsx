@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/apiClient';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import API_BASE_URL from '../../config/api';
@@ -29,7 +30,7 @@ const AdminAnalytics = () => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/admin/analytics?timeframe=${timeframe}`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/admin/analytics?timeframe=${timeframe}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

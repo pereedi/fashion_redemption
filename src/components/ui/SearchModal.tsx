@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/apiClient';
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,7 +54,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
             setIsLoading(true);
             try {
-                const response = await fetch(`${API_BASE_URL}/api/products/search?q=${encodeURIComponent(query)}`);
+                const response = await apiFetch(`${API_BASE_URL}/api/products/search?q=${encodeURIComponent(query)}`);
                 const data = await response.json();
                 setResults(data);
             } catch (err) {

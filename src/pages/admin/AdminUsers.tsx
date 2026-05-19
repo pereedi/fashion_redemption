@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/apiClient';
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { DataTable, type Column } from '../../components/admin/shared/DataTable';
@@ -18,7 +19,7 @@ const AdminUsers = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/admin/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -45,7 +46,7 @@ const AdminUsers = () => {
     if (!window.confirm(`Are you sure you want to delete user ${row.name}?`)) return;
     
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/users/${row.id}`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/admin/users/${row.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -73,7 +74,7 @@ const AdminUsers = () => {
     
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/users/${editingUser.id}/role`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/admin/users/${editingUser.id}/role`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,

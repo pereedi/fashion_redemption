@@ -56,7 +56,8 @@ Configure your AI with a system prompt that explains its role:
 When the AI decides to call `search_products`, your backend/frontend should:
 1. Extract the arguments.
 2. Call `GET /api/products` with those arguments as query parameters.
-3. Return the JSON response back to the AI.
+3. **CRITICAL:** Include the `x-api-key` header in your request, or the server will reject it.
+4. Return the JSON response back to the AI.
 
 ### Step 3: Presenting Products to the User
 The AI will receive a list of products. Instruct it to format the response like this:

@@ -1,3 +1,4 @@
+import { apiFetch } from '../config/apiClient';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -54,7 +55,7 @@ const CheckoutPage: React.FC = () => {
     const fetchUserData = async () => {
       if (isAuthenticated && token) {
         try {
-          const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+          const response = await apiFetch(`${API_BASE_URL}/api/auth/me`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (response.ok) {
@@ -116,7 +117,7 @@ const CheckoutPage: React.FC = () => {
       };
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/orders`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

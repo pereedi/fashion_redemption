@@ -1,3 +1,4 @@
+import { apiFetch } from '../config/apiClient';
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -37,7 +38,7 @@ const PaymentCallbackPage: React.FC = () => {
         // OR we just fetch the order first.
         
         // Let's call a dedicated verify endpoint that takes orderId
-        const response = await fetch(`${API_BASE_URL}/api/orders/verify-order/${orderId}`);
+        const response = await apiFetch(`${API_BASE_URL}/api/orders/verify-order/${orderId}`);
         const data = await response.json();
 
         if (data.status === 'success') {

@@ -5,6 +5,13 @@ This document describes the API endpoints available for managing and searching p
 ## Base URL
 `https://fashion-redemption-api.onrender.com/api/products`
 
+## Authentication
+
+All API endpoints require an API Key to be passed in the headers.
+
+- **Header Name**: `x-api-key`
+- **Example**: `x-api-key: your_api_key_here`
+
 ---
 
 ## 1. Get All Products
@@ -25,7 +32,10 @@ Retrieves a list of products with optional filtering, sorting, and pagination.
   - `limit` (number): Number of products per page (default: 12).
 
 ### Example Request
-`GET /api/products?category=WOMEN&color=BLACK&maxPrice=150`
+```bash
+curl -X GET "https://fashion-redemption-api.onrender.com/api/products?category=WOMEN&color=BLACK&maxPrice=150" \
+     -H "x-api-key: your_api_key_here"
+```
 
 ### Example Response
 ```json
@@ -62,7 +72,10 @@ Retrieves detailed information for a specific product.
   - `id` (string): The `external_id` of the product.
 
 ### Example Request
-`GET /api/products/prod_1714310000000`
+```bash
+curl -X GET "https://fashion-redemption-api.onrender.com/api/products/prod_1714310000000" \
+     -H "x-api-key: your_api_key_here"
+```
 
 ### Example Response
 ```json
@@ -92,4 +105,7 @@ A dedicated search endpoint for quick queries.
   - `q` (string): Search query.
 
 ### Example Request
-`GET /api/products/search?q=dress`
+```bash
+curl -X GET "https://fashion-redemption-api.onrender.com/api/products/search?q=dress" \
+     -H "x-api-key: your_api_key_here"
+```

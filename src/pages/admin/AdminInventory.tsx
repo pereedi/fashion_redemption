@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/apiClient';
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { DataTable, type Column } from '../../components/admin/shared/DataTable';
@@ -18,7 +19,7 @@ const AdminInventory = () => {
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/admin/products`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/admin/products`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -48,7 +49,7 @@ const AdminInventory = () => {
     
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/products/${editingProduct.id}`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/admin/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,

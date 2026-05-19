@@ -1,3 +1,4 @@
+import { apiFetch } from '../config/apiClient';
 import React, { useState, useEffect } from 'react';
 import { useWishlist } from '../context/WishlistContext';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
@@ -27,7 +28,7 @@ const WishlistPage: React.FC = () => {
                 console.log('WishlistPage: Fetching products for IDs:', wishlistItems);
                 const results = await Promise.all(
                     wishlistItems.map(id =>
-                        fetch(`${API_BASE_URL}/api/products/${id}`)
+                        apiFetch(`${API_BASE_URL}/api/products/${id}`)
                             .then(async r => {
                                 if (r.ok) {
                                     const data = await r.json();

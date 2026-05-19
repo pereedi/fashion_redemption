@@ -1,3 +1,4 @@
+import { apiFetch } from '../config/apiClient';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
@@ -26,7 +27,7 @@ const ProductDetailsPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/products/${id}`);
+        const response = await apiFetch(`${API_BASE_URL}/api/products/${id}`);
         if (!response.ok) {
           throw new Error('Product not found or server error');
         }

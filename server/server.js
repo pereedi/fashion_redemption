@@ -6,6 +6,7 @@ import orderRoutes from './routes/orderRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import imageRoutes from './routes/imageRoutes.js';
 import db from './config/db.js';
 import analyticsService from './services/analyticsService.js';
 import ProductRepository from './repositories/ProductRepository.js';
@@ -38,12 +39,21 @@ app.use((req, res, next) => {
   next();
 });
 
+import { apiKeyAuth } from './middleware/apiKeyAuth.js';
+
+// Apply API Key Authentication to all /api routes (except /api/docs)
+app.use('/api', (req, res, next) => {
+  if (req.path === '/docs') return next();
+  apiKeyAuth(req, res, next);
+});
+
 // Routes
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/images', imageRoutes);
 
 // Global Error Handler for JSON parsing errors
 app.use((err, req, res, next) => {

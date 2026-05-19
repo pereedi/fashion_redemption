@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/apiClient';
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -27,7 +28,7 @@ const AdminProducts = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/admin/products`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/admin/products`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -68,7 +69,7 @@ const AdminProducts = () => {
     
     try {
       // Use id (external_id) for deletion as per repository
-      const res = await fetch(`${API_BASE_URL}/api/admin/products/${row.id}`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/admin/products/${row.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -87,7 +88,7 @@ const AdminProducts = () => {
     
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/seed-products`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/seed-products`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -141,7 +142,7 @@ const AdminProducts = () => {
         payloadLength: JSON.stringify(finalData).length 
       });
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 
           'Authorization': `Bearer ${token}`,

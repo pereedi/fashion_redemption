@@ -1,3 +1,4 @@
+import { apiFetch } from '../../config/apiClient';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { TrendingUp, ShoppingCart, Users, DollarSign, Eye, EyeOff, Lock } from 'lucide-react';
@@ -36,7 +37,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/dashboard-stats`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/admin/dashboard-stats`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

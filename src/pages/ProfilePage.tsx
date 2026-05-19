@@ -1,3 +1,4 @@
+import { apiFetch } from '../config/apiClient';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../components/layout/Navbar';
@@ -23,7 +24,7 @@ const ProfilePage: React.FC = () => {
       try {
         // Fetch Orders
         if (token) {
-          const ordersRes = await fetch(`${API_BASE_URL}/api/orders/my-orders`, {
+          const ordersRes = await apiFetch(`${API_BASE_URL}/api/orders/my-orders`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (ordersRes.ok) {
@@ -36,7 +37,7 @@ const ProfilePage: React.FC = () => {
         if (wishlistItems.length > 0) {
           const results = await Promise.all(
             wishlistItems.map(id =>
-              fetch(`${API_BASE_URL}/api/products/${id}`).then(r => r.ok ? r.json() : null)
+              apiFetch(`${API_BASE_URL}/api/products/${id}`).then(r => r.ok ? r.json() : null)
             )
           );
           setWishlistProducts(results.filter(Boolean));

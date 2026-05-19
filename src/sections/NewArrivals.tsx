@@ -1,3 +1,4 @@
+import { apiFetch } from '../config/apiClient';
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProductCard from '../components/ui/ProductCard';
@@ -10,7 +11,7 @@ const NewArrivals: React.FC = () => {
     React.useEffect(() => {
         const fetchNewArrivals = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/products?filter=new`);
+                const response = await apiFetch(`${API_BASE_URL}/api/products?filter=new`);
                 const data = await response.json();
                 setProducts(data.products || []); // Get products from object
             } catch (err) {
