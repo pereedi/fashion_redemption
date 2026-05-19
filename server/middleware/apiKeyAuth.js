@@ -4,7 +4,7 @@ import { logger } from '../utils/logger.js';
 dotenv.config();
 
 // The API key to check against. In production, this should be set in Render environment variables.
-const VALID_API_KEY = process.env.REDEMPTION_API_KEY || 'fashion-redemption-dev-key-2026';
+const VALID_API_KEY = process.env.REDEMPTION_API_KEY || 'fashion-redemption-dev-key-00007';
 
 export const apiKeyAuth = (req, res, next) => {
   // Allow health check, docs, and OPTIONS preflight requests to bypass API key
