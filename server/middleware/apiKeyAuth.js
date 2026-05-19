@@ -7,8 +7,14 @@ dotenv.config();
 const VALID_API_KEY = process.env.REDEMPTION_API_KEY || 'fashion-redemption-dev-key-00007';
 
 export const apiKeyAuth = (req, res, next) => {
-  // Allow health check, docs, and OPTIONS preflight requests to bypass API key
-  if (req.method === 'OPTIONS' || req.path === '/health' || req.path.startsWith('/docs')) {
+  // Allow health check, docs, image routes, and OPTIONS preflight requests to bypass API key
+  if (
+    req.method === 'OPTIONS' || 
+    req.path === '/health' || 
+    req.path.startsWith('/docs') || 
+    req.path.startsWith('/images') || 
+    req.originalUrl.startsWith('/api/images')
+  ) {
     return next();
   }
 
