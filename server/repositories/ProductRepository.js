@@ -2,6 +2,14 @@ import db from '../config/db.js';
 import { logger } from '../utils/logger.js';
 import { productsToSeed } from '../utils/mockProducts.js';
 
+const getBackendUrl = () => {
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL;
+  }
+  return `http://localhost:${process.env.PORT || 5000}`;
+};
+
+
 class ProductRepository {
 
   getSampleProducts(filters = {}) {
@@ -218,12 +226,12 @@ class ProductRepository {
         const primaryImage = productImages.find(img => img.is_primary) || productImages[0];
 
         const getImageUrl = () => {
-          if (primaryImage?.url) return primaryImage.url.startsWith('data:image/') ? `/api/images/${primaryImage.id}` : primaryImage.url;
+          if (primaryImage?.url) return primaryImage.url.startsWith('data:image/') ? `${getBackendUrl()}/api/images/${primaryImage.id}` : primaryImage.url;
           return fallbackImages[Number(p.id) % fallbackImages.length] || fallbackImages[0];
         };
 
         const getAllImages = () => {
-          if (productImages.length > 0) return productImages.map(img => img.url.startsWith('data:image/') ? `/api/images/${img.id}` : img.url);
+          if (productImages.length > 0) return productImages.map(img => img.url.startsWith('data:image/') ? `${getBackendUrl()}/api/images/${img.id}` : img.url);
           return fallbackImages;
         };
 
@@ -278,7 +286,7 @@ class ProductRepository {
 
       const relatedProducts = relatedProductsRaw.map(p => {
         const relatedImg = relatedImages.find(img => img.product_id === p.id);
-        const imgUrl = relatedImg?.url?.startsWith('data:image/') ? `/api/images/${relatedImg.id}` : relatedImg?.url;
+        const imgUrl = relatedImg?.url?.startsWith('data:image/') ? `${getBackendUrl()}/api/images/${relatedImg.id}` : relatedImg?.url;
         return {
           ...p,
           id: p.external_id,
@@ -288,7 +296,7 @@ class ProductRepository {
       });
 
       const primaryImage = images[0];
-      const primaryImgUrl = primaryImage?.url?.startsWith('data:image/') ? `/api/images/${primaryImage.id}` : primaryImage?.url;
+      const primaryImgUrl = primaryImage?.url?.startsWith('data:image/') ? `${getBackendUrl()}/api/images/${primaryImage.id}` : primaryImage?.url;
 
       return {
         ...product,
@@ -296,7 +304,7 @@ class ProductRepository {
         internal_id: product.id,
         price: `Esp ${Number(product.base_price).toLocaleString()}`,
         image: primaryImgUrl || fallbackImages[Number(product.id) % fallbackImages.length] || fallbackImages[0],
-        images: images.length > 0 ? images.map(img => img.url.startsWith('data:image/') ? `/api/images/${img.id}` : img.url) : fallbackImages,
+        images: images.length > 0 ? images.map(img => img.url.startsWith('data:image/') ? `${getBackendUrl()}/api/images/${img.id}` : img.url) : fallbackImages,
         variants,
         reviews,
         relatedProducts,
