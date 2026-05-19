@@ -1,6 +1,6 @@
 import API_BASE_URL from './api';
 
-const API_KEY = import.meta.env.VITE_API_KEY || 'fashion-redemption-dev-key-2026';
+const API_KEY = import.meta.env.VITE_REDEMPTION_API_KEY || 'fashion-redemption-dev-key-2026';
 
 /**
  * A wrapper around the native fetch API that automatically injects
