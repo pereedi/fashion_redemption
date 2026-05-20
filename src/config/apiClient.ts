@@ -2,9 +2,10 @@ import API_BASE_URL from './api';
 
 const API_KEY = import.meta.env.VITE_REDEMPTION_API_KEY || '';
 
-if (import.meta.env.DEV && !API_KEY) {
-  console.warn('WARNING: VITE_REDEMPTION_API_KEY environment variable is not defined!');
+if (!API_KEY) {
+  console.warn('WARNING: VITE_REDEMPTION_API_KEY is empty or undefined. API requests to protected endpoints will return 401 Unauthorized.');
 }
+
 
 
 /**
