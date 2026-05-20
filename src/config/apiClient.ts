@@ -1,6 +1,11 @@
 import API_BASE_URL from './api';
 
-const API_KEY = import.meta.env.VITE_REDEMPTION_API_KEY || 'fashion-redemption-dev-key-00007';
+const API_KEY = import.meta.env.VITE_REDEMPTION_API_KEY || '';
+
+if (import.meta.env.DEV && !API_KEY) {
+  console.warn('WARNING: VITE_REDEMPTION_API_KEY environment variable is not defined!');
+}
+
 
 /**
  * A wrapper around the native fetch API that automatically injects
