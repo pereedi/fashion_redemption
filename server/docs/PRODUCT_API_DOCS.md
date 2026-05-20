@@ -9,6 +9,9 @@ This document describes the API endpoints available for managing and searching p
 
 All API endpoints require an API Key to be passed in the headers.
 
+> [!NOTE]
+> The API key is restricted and will be provided upon request. Please contact the administrator to request an API key.
+
 - **Header Name**: `x-api-key`
 - **Example**: `x-api-key: your_api_key_here`
 
