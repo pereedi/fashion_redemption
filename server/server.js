@@ -69,11 +69,6 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Fashion Redemption Server is running' });
 });
 
-// Health Check
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Fashion Redemption Server is running' });
-});
-
 // API Documentation Route
 app.get('/docs', (req, res) => {
   try {
