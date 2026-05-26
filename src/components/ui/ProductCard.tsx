@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
+import getCleanImageUrl from '../../utils/imageHelper';
 
 interface ProductCardProps {
     id: number | string;
@@ -49,7 +50,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ id, image, name, price, baseP
             <Link to={`/product/${id}`} className="block">
                 <div className="relative aspect-[3/4] overflow-hidden">
                     <img
-                        src={image}
+                        src={getCleanImageUrl(image, 'card')}
                         alt={name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />

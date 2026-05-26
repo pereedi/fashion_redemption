@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GalleryThumbnail from './GalleryThumbnail';
+import getCleanImageUrl from '../../utils/imageHelper';
 
 interface ProductGalleryProps {
     images: string[];
@@ -9,7 +10,7 @@ interface ProductGalleryProps {
 const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
     const [selectedImage, setSelectedImage] = useState(0);
     const [isZoomed, setIsZoomed] = useState(false);
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
@@ -30,19 +31,16 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
                 <AnimatePresence mode="wait">
                     <motion.img
                         key={selectedImage}
-                        src={images[selectedImage]}
+                        src={getCleanImageUrl(images[selectedImage], 'zoom')}
                         alt="Product"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.5 }}
-                        className={`w-full h-full object-cover transition-transform duration-200 ${isZoomed ? 'scale-150' : 'scale-100'
-                            }`}
-                        style={
-                            isZoomed
-                                ? { transformOrigin: `${mousePos.x}% ${mousePos.y}%` }
-                                : {}
-                        }
+                        className={`w-full h-full object-cover transition-transform duration-200 ${
+                            isZoomed ? 'scale-150' : 'scale-100'
+                        }`}
+                        style={{ transformOrigin: `${mousePos.x}% ${mousePos.y}%` }}
                     />
                 </AnimatePresence>
             </div>

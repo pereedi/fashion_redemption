@@ -1,6 +1,7 @@
 import db from '../config/db.js';
 import { logger } from '../utils/logger.js';
 import { productsToSeed } from '../utils/mockProducts.js';
+import { processImages } from '../services/cloudinaryService.js';
 
 const getBackendUrl = () => {
   if (process.env.RENDER_EXTERNAL_URL) {
@@ -335,6 +336,9 @@ class ProductRepository {
       }
     });
 
+    // Upload images to Cloudinary (falls back to original URLs if not configured)
+    const finalImages = await processImages(images || []);
+
     return db.transaction(async (trx) => {
       try {
         const [productId] = await trx('products').insert({
@@ -342,9 +346,9 @@ class ProductRepository {
           external_id: sanitizedData.external_id || baseData.id || `prod_${Date.now()}`
         });
 
-        if (images && images.length > 0) {
+        if (finalImages && finalImages.length > 0) {
           await trx('product_images').insert(
-            images.map((url, index) => ({
+            finalImages.map((url, index) => ({
               product_id: productId,
               url,
               is_primary: index === 0
@@ -385,6 +389,9 @@ class ProductRepository {
         sanitizedData[col] = baseData[col];
       }
     });
+
+    // Upload updated images to Cloudinary (falls back to original URLs if not configured)
+    const finalImages = images ? await processImages(images) : undefined;
     
     return db.transaction(async (trx) => {
       try {
@@ -396,11 +403,11 @@ class ProductRepository {
         const product = await trx('products').where('external_id', id).first() || await trx('products').where('id', id).first();
         if (!product) return null;
 
-        if (images) {
+        if (finalImages) {
           await trx('product_images').where('product_id', product.id).del();
-          if (images.length > 0) {
+          if (finalImages.length > 0) {
             await trx('product_images').insert(
-              images.map((url, index) => ({
+              finalImages.map((url, index) => ({
                 product_id: product.id,
                 url,
                 is_primary: index === 0

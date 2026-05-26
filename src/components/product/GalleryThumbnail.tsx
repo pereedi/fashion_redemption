@@ -1,4 +1,5 @@
 import React from 'react';
+import getCleanImageUrl from '../../utils/imageHelper';
 
 interface GalleryThumbnailProps {
   image: string;
@@ -18,7 +19,7 @@ const GalleryThumbnail: React.FC<GalleryThumbnailProps> = ({ image, index, isSel
       }`}
     >
       <img 
-        src={image} 
+        src={getCleanImageUrl(image, 'thumbnail')} 
         alt={`Thumbnail ${index + 1}`} 
         className="w-full h-full object-cover" 
       />
