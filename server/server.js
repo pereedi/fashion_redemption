@@ -132,6 +132,7 @@ app.post('/api/seed-products', async (req, res) => {
     logger.error('Seed endpoint failed', { error: err.message });
     res.status(500).json({ error: err.message });
   }
+  
 });
 
 // Start Server

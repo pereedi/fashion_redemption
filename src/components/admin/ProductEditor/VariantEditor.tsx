@@ -1,6 +1,5 @@
 import React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-
 export interface Variant {
   size: string;
   stock: number;
