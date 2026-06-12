@@ -9,19 +9,20 @@ interface ProductGalleryProps {
 }
 
 const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
+    const safeImages = images?.length ? images : [];
     const [selectedImage, setSelectedImage] = useState(0);
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
 
     // Preload adjacent images for smooth lightbox navigation
     useEffect(() => {
-        images.forEach((img, i) => {
+        safeImages.forEach((img, i) => {
             if (Math.abs(i - selectedImage) <= 1) {
                 const image = new Image();
                 image.src = getCleanImageUrl(img, 'zoom');
             }
         });
-    }, [selectedImage, images]);
+    }, [selectedImage, safeImages]);
 
     const openLightbox = (index: number) => {
         setLightboxIndex(index);
@@ -36,12 +37,12 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
 
     const lightboxPrev = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setLightboxIndex(i => (i - 1 + images.length) % images.length);
+        setLightboxIndex(i => (i - 1 + safeImages.length) % safeImages.length);
     };
 
     const lightboxNext = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setLightboxIndex(i => (i + 1) % images.length);
+        setLightboxIndex(i => (i + 1) % safeImages.length);
     };
 
     // Close lightbox on Escape key
@@ -49,12 +50,12 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
         const handleKey = (e: KeyboardEvent) => {
             if (!lightboxOpen) return;
             if (e.key === 'Escape') closeLightbox();
-            if (e.key === 'ArrowLeft') setLightboxIndex(i => (i - 1 + images.length) % images.length);
-            if (e.key === 'ArrowRight') setLightboxIndex(i => (i + 1) % images.length);
+            if (e.key === 'ArrowLeft') setLightboxIndex(i => (i - 1 + safeImages.length) % safeImages.length);
+            if (e.key === 'ArrowRight') setLightboxIndex(i => (i + 1) % safeImages.length);
         };
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
-    }, [lightboxOpen, images.length]);
+    }, [lightboxOpen, safeImages.length]);
 
     return (
         <>
@@ -67,7 +68,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
                     <AnimatePresence mode="wait">
                         <motion.img
                             key={selectedImage}
-                            src={getCleanImageUrl(images[selectedImage], 'main')}
+                            src={getCleanImageUrl(safeImages[selectedImage], 'main')}
                             alt="Product"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -87,7 +88,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
 
                 {/* Thumbnails */}
                 <div className="grid grid-cols-4 gap-4">
-                    {images.slice(0, 4).map((img, index) => (
+                    {safeImages.slice(0, 4).map((img, index) => (
                         <GalleryThumbnail
                             key={index}
                             image={img}
@@ -119,7 +120,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
                         </button>
 
                         {/* Prev button */}
-                        {images.length > 1 && (
+                        {safeImages.length > 1 && (
                             <button
                                 className="absolute left-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition-all z-10"
                                 onClick={lightboxPrev}
@@ -132,7 +133,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
                         <AnimatePresence mode="wait">
                             <motion.img
                                 key={lightboxIndex}
-                                src={getCleanImageUrl(images[lightboxIndex], 'zoom')}
+                                src={getCleanImageUrl(safeImages[lightboxIndex], 'zoom')}
                                 alt="Product full view"
                                 initial={{ opacity: 0, scale: 0.97 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -145,7 +146,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
                         </AnimatePresence>
 
                         {/* Next button */}
-                        {images.length > 1 && (
+                        {safeImages.length > 1 && (
                             <button
                                 className="absolute right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition-all z-10"
                                 onClick={lightboxNext}
@@ -155,9 +156,9 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
                         )}
 
                         {/* Dot indicators */}
-                        {images.length > 1 && (
+                        {safeImages.length > 1 && (
                             <div className="absolute bottom-6 flex gap-2">
-                                {images.slice(0, 4).map((_, i) => (
+                                {safeImages.slice(0, 4).map((_, i) => (
                                     <button
                                         key={i}
                                         onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); }}

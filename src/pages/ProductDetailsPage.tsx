@@ -77,7 +77,7 @@ const ProductDetailsPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-16 xl:gap-24 mb-24">
           {/* Gallery - 60% */}
           <div className="w-full lg:w-[60%]">
-            <ProductGallery images={product.images} />
+            <ProductGallery images={product.images ?? [product.image].filter(Boolean)} />
           </div>
 
           {/* Info - 40% */}
