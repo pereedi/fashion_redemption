@@ -14,6 +14,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ category, filters, onPageChan
     const [products, setProducts] = React.useState<any[]>([]);
     const [pagination, setPagination] = React.useState<any>(null);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         const fetchProducts = async () => {
@@ -24,11 +25,15 @@ const ProductGrid: React.FC<ProductGridProps> = ({ category, filters, onPageChan
                     ...filters
                 });
                 const response = await apiFetch(`${API_BASE_URL}/api/products?${params}`);
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
                 const data = await response.json();
-                setProducts(data.products || []);
-                setPagination(data);
-            } catch (err) {
+                setProducts(data.data || []);
+                setPagination(data.pagination || null);
+            } catch (err: any) {
                 console.error('Failed to fetch products:', err);
+                setError(err.message || 'Unable to load products. Please check your connection.');
             } finally {
                 setIsLoading(false);
             }
@@ -42,6 +47,15 @@ const ProductGrid: React.FC<ProductGridProps> = ({ category, filters, onPageChan
             <div className="flex flex-col items-center justify-center py-32 gap-4">
                 <div className="w-8 h-8 border-2 border-luxury-red border-t-transparent rounded-full animate-spin" />
                 <span className="text-[10px] font-bold tracking-widest uppercase text-black/40">Fetching Collection...</span>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="py-32 text-center border border-dashed border-luxury-red/20 rounded-sm">
+                <p className="text-[10px] font-bold tracking-widest text-luxury-red uppercase mb-2">Connection Issue</p>
+                <p className="text-xs text-black/60">{error}</p>
             </div>
         );
     }
@@ -62,9 +76,9 @@ const ProductGrid: React.FC<ProductGridProps> = ({ category, filters, onPageChan
                         key={product.id}
                         id={product.id}
                         name={product.name}
-                        price={`Esp ${Number(product.base_price).toLocaleString()}`}
-                        basePrice={product.base_price}
-                        image={product.images?.[0] || 'https://via.placeholder.com/400x500'}
+                        price={`Esp ${Number(product.base_price || product.price).toLocaleString()}`}
+                        basePrice={product.base_price || product.price}
+                        image={product.image || product.images?.[0] || 'https://via.placeholder.com/400x500'}
                         category={product.category}
                         className="shadow-none border border-light-gray/50 hover:border-transparent"
                     />

@@ -30,8 +30,8 @@ class ProductRepository {
         rating: p.rating,
         review_count: p.review_count,
         created_at: new Date(Date.now() - index * 10000),
-        image: `/images/products/${sanitizedName}_1.jpg`,
-        images: p.images.map((img, i) => `/images/products/${sanitizedName}_${i + 1}.jpg`),
+        image: `${getBackendUrl()}/images/products/${sanitizedName}_1.jpg`,
+        images: p.images.map((img, i) => `${getBackendUrl()}/images/products/${sanitizedName}_${i + 1}.jpg`),
         sizes: p.variants ? [...new Set(p.variants.map(v => v.size))] : [],
         colors: p.variants ? [...new Set(p.variants.map(v => v.color))] : [],
         stock: p.variants ? p.variants.reduce((acc, v) => acc + (v.stock || 0), 0) : 0,
@@ -55,8 +55,8 @@ class ProductRepository {
       rating: 4.9,
       review_count: 24,
       created_at: new Date(Date.now() - 5000000),
-      image: '/images/products/product_3.jpg',
-      images: ['/images/products/product_3.jpg', '/images/products/product_4.jpg'],
+      image: `${getBackendUrl()}/images/products/product_3.jpg`,
+      images: [`${getBackendUrl()}/images/products/product_3.jpg`, `${getBackendUrl()}/images/products/product_4.jpg`],
       sizes: ['S', 'M', 'L', 'XL'],
       colors: ['Black'],
       stock: 5,
@@ -77,8 +77,8 @@ class ProductRepository {
       rating: 5.0,
       review_count: 5,
       created_at: new Date(Date.now() - 6000000),
-      image: '/images/products/product_6.jpg',
-      images: ['/images/products/product_6.jpg'],
+      image: `${getBackendUrl()}/images/products/product_3.jpg`,
+      images: [`${getBackendUrl()}/images/products/product_3.jpg`, `${getBackendUrl()}/images/products/product_4.jpg`],
       sizes: ['M', 'L', 'XL'],
       colors: ['Navy'],
       stock: 4,
@@ -124,17 +124,17 @@ class ProductRepository {
     };
   }
 
-  getFallbackImages() {
-    return [
-      '/images/products/women_elegant_pleated_midi_dress_1.jpg',
-      '/images/products/women_tailored_power_suit_1.jpg',
-      '/images/products/women_relaxed_linen_suit_1.jpg',
-      '/images/products/girls_floral_halter_neck_dress_1.jpg',
-      '/images/products/boys_ribbed_knit_hoodie_sweater_1.jpg',
-      '/images/products/women_ribbed_knit_bodycon_dress_1.jpg',
-      '/images/products/girls_bow_detail_tiered_dress_1.jpg'
-    ];
-  }
+ getFallbackImages() {
+  return [
+    `${getBackendUrl()}/images/products/women_elegant_pleated_midi_dress_1.jpg`,
+    `${getBackendUrl()}/images/products/women_tailored_power_suit_1.jpg`,
+    `${getBackendUrl()}/images/products/women_relaxed_linen_suit_1.jpg`,
+    `${getBackendUrl()}/images/products/girls_floral_halter_neck_dress_1.jpg`,
+    `${getBackendUrl()}/images/products/boys_ribbed_knit_hoodie_sweater_1.jpg`,
+    `${getBackendUrl()}/images/products/women_ribbed_knit_bodycon_dress_1.jpg`,
+    `${getBackendUrl()}/images/products/girls_bow_detail_tiered_dress_1.jpg`
+  ];
+}
 
   async getAll(filters = {}) {
     if (!filters || typeof filters !== 'object') {

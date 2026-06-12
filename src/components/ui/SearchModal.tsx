@@ -56,7 +56,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
             try {
                 const response = await apiFetch(`${API_BASE_URL}/api/products/search?q=${encodeURIComponent(query)}`);
                 const data = await response.json();
-                setResults(data);
+                setResults(data.data || []);
             } catch (err) {
                 console.error('Search error:', err);
             } finally {
@@ -163,7 +163,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                                                 >
                                                     <div className="w-16 h-20 bg-f5 overflow-hidden flex-shrink-0">
                                                         <img 
-                                                            src={product.images[0]} 
+                                                            src={product.image || product.images?.[0]} 
                                                             alt={product.name}
                                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                         />

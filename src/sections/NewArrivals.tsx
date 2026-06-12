@@ -7,15 +7,20 @@ import API_BASE_URL from '../config/api';
 const NewArrivals: React.FC = () => {
     const [products, setProducts] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         const fetchNewArrivals = async () => {
             try {
                 const response = await apiFetch(`${API_BASE_URL}/api/products?filter=new`);
+                if (!response.ok) {
+                    throw new Error('Failed to retrieve new arrivals');
+                }
                 const data = await response.json();
-                setProducts(data.products || []); // Get products from object
-            } catch (err) {
+                setProducts(data.data || []); // Get products from object
+            } catch (err: any) {
                 console.error('Error fetching new arrivals:', err);
+                setError(err.message || 'Unable to load new arrivals');
             } finally {
                 setLoading(false);
             }
@@ -44,19 +49,26 @@ const NewArrivals: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {products.map((product) => (
-                        <ProductCard 
-                            key={product.id} 
-                            id={product.id}
-                            name={product.name}
-                            price={`Esp ${Number(product.base_price).toLocaleString()}`}
-                            basePrice={product.base_price}
-                            image={product.images?.[0] || 'https://via.placeholder.com/400x500'}
-                            category={product.category}
-                        />
-                    ))}
-                </div>
+                {error ? (
+                    <div className="py-12 text-center border border-dashed border-luxury-red/20 rounded-sm">
+                        <p className="text-[10px] font-bold tracking-widest text-luxury-red uppercase mb-2">Connection Issue</p>
+                        <p className="text-xs text-black/60">{error}</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {products.map((product) => (
+                            <ProductCard 
+                                key={product.id} 
+                                id={product.id}
+                                name={product.name}
+                                price={`Esp ${Number(product.base_price || product.price).toLocaleString()}`}
+                                basePrice={product.base_price || product.price}
+                                image={product.image || product.images?.[0] || 'https://via.placeholder.com/400x500'}
+                                category={product.category}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
         </section>
     );

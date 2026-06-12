@@ -33,7 +33,7 @@ const WishlistPage: React.FC = () => {
                                 if (r.ok) {
                                     const data = await r.json();
                                     console.log(`WishlistPage: Successfully fetched product ${id}:`, data);
-                                    return data;
+                                    return data.data;
                                 }
                                 console.warn(`WishlistPage: Failed to fetch product ${id}, status: ${r.status}`);
                                 return null;

@@ -37,7 +37,7 @@ const ProfilePage: React.FC = () => {
         if (wishlistItems.length > 0) {
           const results = await Promise.all(
             wishlistItems.map(id =>
-              apiFetch(`${API_BASE_URL}/api/products/${id}`).then(r => r.ok ? r.json() : null)
+              apiFetch(`${API_BASE_URL}/api/products/${id}`).then(r => r.ok ? r.json().then(j => j.data) : null)
             )
           );
           setWishlistProducts(results.filter(Boolean));

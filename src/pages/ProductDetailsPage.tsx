@@ -32,7 +32,7 @@ const ProductDetailsPage: React.FC = () => {
           throw new Error('Product not found or server error');
         }
         const data = await response.json();
-        setProduct(data);
+        setProduct(data.data);
       } catch (err: any) {
         console.error('Fetch error:', err);
         setError(err.message);

@@ -6,16 +6,21 @@ import API_BASE_URL from '../config/api';
 const TrendingCollections: React.FC = () => {
     const [products, setProducts] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         const fetchTrending = async () => {
             try {
                 // Fetch 4 trending women products (not in new arrivals)
                 const response = await apiFetch(`${API_BASE_URL}/api/products?filter=trending`);
+                if (!response.ok) {
+                    throw new Error('Failed to retrieve trending collections');
+                }
                 const data = await response.json();
-                setProducts(data.products || []);
-            } catch (err) {
+                setProducts(data.data || []);
+            } catch (err: any) {
                 console.error('Error fetching trending products:', err);
+                setError(err.message || 'Unable to load trending collections');
             } finally {
                 setLoading(false);
             }
@@ -40,19 +45,26 @@ const TrendingCollections: React.FC = () => {
                     </a>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {products.map((product) => (
-                        <ProductCard 
-                            key={product.id} 
-                            id={product.id}
-                            name={product.name}
-                            price={`Esp ${Number(product.base_price).toLocaleString()}`}
-                            basePrice={product.base_price}
-                            image={product.images?.[0] || 'https://via.placeholder.com/400x500'}
-                            category={product.category}
-                        />
-                    ))}
-                </div>
+                {error ? (
+                    <div className="py-12 text-center border border-dashed border-luxury-red/20 rounded-sm">
+                        <p className="text-[10px] font-bold tracking-widest text-luxury-red uppercase mb-2">Connection Issue</p>
+                        <p className="text-xs text-black/60">{error}</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {products.map((product) => (
+                            <ProductCard 
+                                key={product.id} 
+                                id={product.id}
+                                name={product.name}
+                                price={`Esp ${Number(product.base_price || product.price).toLocaleString()}`}
+                                basePrice={product.base_price || product.price}
+                                image={product.image || product.images?.[0] || 'https://via.placeholder.com/400x500'}
+                                category={product.category}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
         </section>
     );
