@@ -84,7 +84,10 @@ const ProductDetailsPage: React.FC = () => {
           <div className="w-full lg:w-[35%]">
             <ProductInfo product={{
               ...product,
-              basePrice: product.base_price
+              basePrice: product.base_price,
+              sizes: Array.isArray(product.sizes) ? product.sizes : [],
+              colors: Array.isArray(product.colors) ? product.colors : [],
+              variants: Array.isArray(product.variants) ? product.variants : [],
             }} />
           </div>
         </div>

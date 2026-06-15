@@ -28,22 +28,23 @@ interface ProductInfoProps {
 
 const ProductInfo: React.FC<ProductInfoProps> = ({ product: anyProduct }) => {
     const product = anyProduct;
-    const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || '');
-    const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || '');
+    const safeSizes = Array.isArray(product.sizes) ? product.sizes : [];
+    const safeColors = Array.isArray(product.colors) ? product.colors : [];
+    const safeVariants = Array.isArray(product.variants) ? product.variants : [];
+
+    const [selectedSize, setSelectedSize] = useState(safeSizes[0] || '');
+    const [selectedColor, setSelectedColor] = useState(safeColors[0] || '');
     
     const { toggleWishlist, isInWishlist } = useWishlist();
     const { addToCart } = useCart();
     const isWishlisted = isInWishlist(String(product.id));
 
-    // Calculate stock for specific variant combination
     const { currentStock, isOutOfStock } = useMemo(() => {
-        // If there are no variants, use base product stock
-        if (!product.variants || product.variants.length === 0) {
+        if (!safeVariants.length) {
             return { currentStock: product.stock, isOutOfStock: product.stock === 0 };
         }
 
-        // Find variant matching BOTH size and (if applicable) color
-        const variant = product.variants.find(v => {
+        const variant = safeVariants.find(v => {
             const sizeMatch = !selectedSize || v.size === selectedSize;
             const colorMatch = !selectedColor || v.color === selectedColor;
             return sizeMatch && colorMatch;
@@ -53,9 +54,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product: anyProduct }) => {
             return { currentStock: variant.stock, isOutOfStock: variant.stock === 0 };
         }
 
-        // If a specific combination doesn't exist but variants do, it's out of stock for that combo
         return { currentStock: 0, isOutOfStock: true };
-    }, [product.variants, product.stock, selectedSize, selectedColor]);
+    }, [safeVariants, product.stock, selectedSize, selectedColor]);
 
     const handleToggleWishlist = () => {
         toggleWishlist(String(product.id));
@@ -84,7 +84,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product: anyProduct }) => {
             title: "Materials & Care",
             content: "Hand-crafted from premium materials. Dry clean only. Iron on low heat if necessary. Handle with care."
         }
-      ];
+    ];
 
     return (
         <div className="flex flex-col gap-10">
@@ -117,16 +117,16 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product: anyProduct }) => {
 
             {/* Selection Area */}
             <div className="space-y-10 py-6 border-y border-gray-100">
-                {product.colors && product.colors.length > 1 && (
+                {safeColors.length > 1 && (
                     <ColorSelector
-                        colors={product.colors}
+                        colors={safeColors}
                         selectedColor={selectedColor}
                         onSelect={setSelectedColor}
                     />
                 )}
 
                 <SizeSelector
-                    sizes={product.sizes}
+                    sizes={safeSizes}
                     selectedSize={selectedSize}
                     onSelect={setSelectedSize}
                 />

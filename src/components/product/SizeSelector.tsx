@@ -7,6 +7,9 @@ interface SizeSelectorProps {
 }
 
 const SizeSelector: React.FC<SizeSelectorProps> = ({ sizes, selectedSize, onSelect }) => {
+    const safeSizes = sizes ?? [];
+    if (safeSizes.length === 0) return null;
+
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center text-[10px] font-bold tracking-widest uppercase mb-4">
@@ -14,7 +17,7 @@ const SizeSelector: React.FC<SizeSelectorProps> = ({ sizes, selectedSize, onSele
                 <button className="text-luxury-red hover:underline transition-all">Size Guide</button>
             </div>
             <div className="flex gap-3">
-                {sizes.map((size) => (
+                {safeSizes.map((size) => (
                     <button
                         key={size}
                         onClick={() => onSelect(size)}
