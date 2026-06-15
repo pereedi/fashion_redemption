@@ -42,9 +42,9 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({ rating, reviewCount, revi
             </div>
 
             <div className="space-y-12">
-                {reviews.map((review) => (
-                    <ReviewCard key={review.id} review={review} />
-                ))}
+            {(reviews ?? []).map((review) => (
+                <ReviewCard key={review.id} review={review} />
+            ))}
             </div>
         </div>
     );

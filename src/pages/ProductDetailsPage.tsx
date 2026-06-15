@@ -94,9 +94,9 @@ const ProductDetailsPage: React.FC = () => {
         )}
         
         <ReviewSection 
-          rating={product.rating} 
-          reviewCount={product.reviewCount} 
-          reviews={product.reviews || []} 
+            rating={product.rating ?? 0} 
+            reviewCount={product.review_count ?? product.reviewCount ?? 0} 
+            reviews={Array.isArray(product.reviews) ? product.reviews : []} 
         />
       </main>
 
