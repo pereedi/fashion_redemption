@@ -25,6 +25,8 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import OrderSuccessPage from './pages/OrderSuccessPage';
+
 
 function App() {
   return (
@@ -49,6 +51,7 @@ function App() {
                   <Route path="/search" element={<SearchResultsPage />} />
                   <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
                   <Route path="/payment/verify" element={<PaymentCallbackPage />} />
+                  <Route path="/order-success" element={<OrderSuccessPage />} /> 
                   <Route
                     path="/checkout"
                     element={

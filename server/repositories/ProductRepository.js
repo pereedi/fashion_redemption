@@ -295,7 +295,7 @@ class ProductRepository {
           image: imgUrl || fallbackImages[Number(p.id) % fallbackImages.length] || fallbackImages[0]
         };
       });
-
+ 
       const primaryImage = images[0];
       const primaryImgUrl = primaryImage?.url?.startsWith('data:image/') ? `${getBackendUrl()}/api/images/${primaryImage.id}` : primaryImage?.url;
 
