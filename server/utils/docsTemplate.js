@@ -538,6 +538,16 @@ export const generateDocsHTML = (productDocs, aiDocs) => {
 
     '  document.getElementById("product-api").innerHTML     = marked.parse(productRaw);',
     '  document.getElementById("ai-integration").innerHTML  = marked.parse(aiRaw);',
+    '',
+    '  // Dynamically assign anchor IDs to all headings',
+    '  document.querySelectorAll(".content-section h1, .content-section h2, .content-section h3").forEach(h => {',
+    '    const text = h.textContent.toLowerCase()',
+    '      .replace(/^\\d+\\.\\s*/, "")',
+    '      .replace(/[^a-z0-9\\s-]/g, "")',
+    '      .trim()',
+    '      .replace(/\\s+/g, "-");',
+    '    h.id = text;',
+    '  });',
 
     // Wrap all <pre> blocks with .code-wrap + copy button
     '  document.querySelectorAll("pre").forEach(pre => {',

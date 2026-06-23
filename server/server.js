@@ -15,6 +15,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { generateDocsHTML } from './utils/docsTemplate.js';
+import { apiKeyAuth } from './middleware/apiKeyAuth.js';
+import { rateLimiter } from './middleware/rateLimiter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,7 +44,8 @@ app.use((req, res, next) => {
   next();
 });
 
-import { apiKeyAuth } from './middleware/apiKeyAuth.js';
+// Apply rate limiting to all API requests
+app.use('/api', rateLimiter);
 
 // Apply API Key Authentication to all /api routes (except /api/docs)
 app.use('/api', (req, res, next) => {
@@ -51,6 +54,7 @@ app.use('/api', (req, res, next) => {
 });
 
 // Routes
+app.use('/api/v1/products', productRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes);

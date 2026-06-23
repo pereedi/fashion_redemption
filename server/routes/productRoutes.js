@@ -52,6 +52,31 @@ function parseMessage(message = '') {
     filters.filter = 'sale';
   }
 
+  // Size detection
+  const sizeWords = {
+    'extra large': 'XL',
+    'small': 'S',
+    'medium': 'M',
+    'large': 'L',
+    'xxl': 'XXL',
+    'xs': 'XS',
+    'xl': 'XL'
+  };
+
+  for (const [word, code] of Object.entries(sizeWords)) {
+    if (text.includes(word)) {
+      filters.size = code;
+      break;
+    }
+  }
+
+  if (!filters.size) {
+    const sizeMatch = text.match(/\b(xs|s|m|l|xl|xxl)\b/i);
+    if (sizeMatch) {
+      filters.size = sizeMatch[1].toUpperCase();
+    }
+  }
+
   // General keyword query — use the full message but strip filler words
   const stopWords = ['show', 'me', 'find', 'get', 'i', 'want', 'looking', 'for', 'some', 'a', 'an', 'the', 'please', 'can', 'you'];
   const tokens = text.split(/\s+/).filter(t => !stopWords.includes(t) && t.length > 2);
@@ -66,13 +91,18 @@ function parseMessage(message = '') {
  * Shape a raw product record into the integration-safe response object.
  */
 function toPublicProduct(p, detail = false) {
+  const id = p.id || p.external_id;
+  const frontendUrl = process.env.FRONTEND_URL || 'https://fashion-redemption.vercel.app';
   const base = {
-    id: p.id || p.external_id,
+    id,
     name: p.name,
-    price: p.basePrice ?? p.base_price ?? null,
+    price: Number(p.basePrice ?? p.base_price ?? 0),
     currency: 'ESP',
+    category: p.category || '',
+    rating: Number(p.rating ?? 0),
     image: p.image || (Array.isArray(p.images) ? p.images[0] : null),
-    availability: (p.stock ?? 0) > 0
+    availability: (p.stock ?? 0) > 0,
+    checkoutUrl: `${frontendUrl}/product/${id}`
   };
 
   if (detail) {
@@ -80,6 +110,8 @@ function toPublicProduct(p, detail = false) {
       ...base,
       description: p.description || '',
       images: p.images || [],
+      sizes: p.sizes || [],
+      colors: p.colors || []
     };
   }
 
@@ -112,13 +144,13 @@ router.get('/', async (req, res) => {
   try {
     const {
       category, type, sort, q, filter,
-      color, minPrice, maxPrice,
+      color, size, minPrice, maxPrice,
       page = 1, limit = 12
     } = req.query;
 
     const { products, total } = await ProductRepository.getAll({
       category, type, q, sort, filter,
-      color, minPrice, maxPrice,
+      color, size, minPrice, maxPrice,
       page: parseInt(page),
       limit: parseInt(limit)
     });

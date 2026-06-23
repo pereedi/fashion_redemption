@@ -21,7 +21,7 @@ Your chatbot receives a natural language message from the user:
 
 ```json
 {
-  "message": "Show me luxury black dresses"
+  "message": "Show me a medium black dress under 15000 ESP"
 }
 ```
 
@@ -32,14 +32,14 @@ Your chatbot receives a natural language message from the user:
 Forward the message to the chatbot query endpoint:
 
 ```http
-POST /chatbot/query
+POST /api/v1/products/chatbot/query
 ```
 
 ```bash
-curl -X POST "https://fashion-redemption-api.onrender.com/api/products/chatbot/query" \
+curl -X POST "https://fashion-redemption-api.onrender.com/api/v1/products/chatbot/query" \
 -H "Content-Type: application/json" \
 -H "x-api-key: YOUR_API_KEY" \
--d '{ "message": "Show me luxury black dresses" }'
+-d '{ "message": "Show me a medium black dress under 15000 ESP" }'
 ```
 
 ---
@@ -52,10 +52,15 @@ curl -X POST "https://fashion-redemption-api.onrender.com/api/products/chatbot/q
   "message": "Products retrieved successfully",
   "data": [
     {
-      "id": "prod_1714310000001",
-      "name": "Luxury Black Dress",
-      "price": 220,
-      "image": "https://secured-image-url.example.com/dress.jpg"
+      "id": "prod_1714310000000",
+      "name": "Elegant Pleated Midi Dress",
+      "price": 14000,
+      "currency": "ESP",
+      "category": "women",
+      "rating": 4.8,
+      "image": "https://fashion-redemption-api.onrender.com/images/products/women_elegant_pleated_midi_dress_1.jpg",
+      "availability": true,
+      "checkoutUrl": "https://fashion-redemption.vercel.app/product/prod_1714310000000"
     }
   ]
 }
@@ -65,11 +70,11 @@ curl -X POST "https://fashion-redemption-api.onrender.com/api/products/chatbot/q
 
 ### Step 4 — Present Products to the User
 
-Use the `id` field to construct a checkout link. Your AI should format the response like:
+Use the `checkoutUrl` field returned by the API directly, or construct it using the `id` field. Your AI should format the response like:
 
-> **Luxury Black Dress** — *Esp 220*
+> **Elegant Pleated Midi Dress** — *14,000 ESP*
 >
-> [Click here to view and checkout](https://fashion-redemption.vercel.app/product/prod_1714310000001)
+> [Click here to view and checkout](https://fashion-redemption.vercel.app/product/prod_1714310000000)
 
 ---
 
@@ -80,7 +85,7 @@ For OpenAI-compatible or Claude tool-calling integrations, provide this tool sch
 ```json
 {
   "name": "search_products",
-  "description": "Search for Fashion Redemption products based on user preferences such as name, color, category, and price range.",
+  "description": "Search for Fashion Redemption products based on user preferences such as name, color, size, category, and price range.",
   "parameters": {
     "type": "object",
     "properties": {
@@ -96,6 +101,11 @@ For OpenAI-compatible or Claude tool-calling integrations, provide this tool sch
       "color": {
         "type": "string",
         "description": "Preferred product color (e.g., 'BLACK', 'WHITE', 'BLUE')."
+      },
+      "size": {
+        "type": "string",
+        "enum": ["XS", "S", "M", "L", "XL", "XXL"],
+        "description": "Preferred product size."
       },
       "minPrice": {
         "type": "number",
@@ -146,33 +156,36 @@ Always be helpful, stylish, and conversational in tone.
 
 ## Advanced Filtering Examples
 
-The AI can combine multiple filters in a single tool call.
+The AI can combine multiple filters, including size, in a single tool call.
 
-**Example 1:** "Show me black dresses for women under 150 Esp"
+**Example 1:** "Show me medium black dresses for women under 15000 ESP"
 
 ```json
 {
   "q": "dress",
   "category": "WOMEN",
   "color": "BLACK",
-  "maxPrice": 150
+  "size": "M",
+  "maxPrice": 15000
 }
 ```
 
-**Example 2:** "What new arrivals do you have for men?"
+**Example 2:** "What new arrivals do you have for men in size XL?"
 
 ```json
 {
   "category": "MEN",
+  "size": "XL",
   "filter": "new"
 }
 ```
 
-**Example 3:** "Show me trending women's items sorted by price"
+**Example 3:** "Show me trending women's items in size S sorted by price"
 
 ```json
 {
   "category": "WOMEN",
+  "size": "S",
   "filter": "trending",
   "sort": "price_asc"
 }
@@ -184,9 +197,9 @@ The AI can combine multiple filters in a single tool call.
 
 If no products are found, instruct the AI to:
 
-1. Acknowledge the specific filters used (e.g., *"I couldn't find any blue suits for kids..."*)
-2. Suggest broader alternatives (e.g., *"Would you like to see navy blue suits instead, or black suits for kids?"*)
-3. Offer to remove one filter at a time to widen the results
+1. Acknowledge the specific filters used (e.g., *"I couldn't find any blue suits for kids in size Medium..."*)
+2. Suggest broader alternatives (e.g., *"Would you like to see navy blue suits instead, or black suits for kids in size Medium?"*)
+3. Offer to remove one filter at a time (like size or color) to widen the results
 
 ---
 
@@ -195,7 +208,7 @@ If no products are found, instruct the AI to:
 For simple keyword-based queries without AI orchestration, use the search endpoint directly:
 
 ```bash
-curl -X GET "https://fashion-redemption-api.onrender.com/api/products/search?q=black+dress" \
+curl -X GET "https://fashion-redemption-api.onrender.com/api/v1/products/search?q=black+dress" \
 -H "x-api-key: YOUR_API_KEY"
 ```
 
@@ -204,7 +217,7 @@ curl -X GET "https://fashion-redemption-api.onrender.com/api/products/search?q=b
 ## Security Notes
 
 - **Never expose your API key** in client-side or frontend code
-- Make all API calls from your server/backend
+- Make all API calls from your server/backend proxy
 - Cache responses where appropriate to minimize API calls
 - Handle rate limit errors (`429`) with exponential backoff
 

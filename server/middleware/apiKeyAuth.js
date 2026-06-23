@@ -28,12 +28,12 @@ export const apiKeyAuth = (req, res, next) => {
 
   if (!apiKey) {
     logger.warn(`API key missing on request to ${req.path}`);
-    return res.status(401).json({ message: 'Unauthorized: API key is missing. Please provide x-api-key header.' });
+    return res.status(401).json({ success: false, message: 'Unauthorized: API key is missing. Please provide x-api-key header.' });
   }
 
   if (apiKey !== VALID_API_KEY) {
     logger.warn(`Invalid API key provided: ${apiKey}`);
-    return res.status(403).json({ message: 'Forbidden: Invalid API key.' });
+    return res.status(403).json({ success: false, message: 'Forbidden: Invalid API key.' });
   }
 
   next();

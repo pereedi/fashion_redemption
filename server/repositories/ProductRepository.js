@@ -110,6 +110,12 @@ class ProductRepository {
       );
     }
 
+    if (filters.size && filters.size !== 'undefined') {
+      filtered = filtered.filter(p => 
+        p.sizes.some(s => s.toLowerCase() === filters.size.toLowerCase())
+      );
+    }
+
     if (filters.minPrice !== undefined && filters.minPrice !== 'undefined') {
       filtered = filtered.filter(p => p.base_price >= parseFloat(filters.minPrice));
     }
@@ -184,6 +190,14 @@ class ProductRepository {
           this.select('product_id')
             .from('product_variants')
             .whereRaw('LOWER(color) LIKE ?', [`%${filters.color.toLowerCase()}%`]);
+        });
+      }
+
+      if (filters.size && filters.size !== 'undefined') {
+        query = query.whereIn('products.id', function() {
+          this.select('product_id')
+            .from('product_variants')
+            .whereRaw('LOWER(size) = ?', [filters.size.toLowerCase()]);
         });
       }
 
