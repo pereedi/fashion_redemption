@@ -12,28 +12,32 @@ if (!VALID_API_KEY) {
 
 
 export const apiKeyAuth = (req, res, next) => {
-  // Allow health check, docs, image routes, and OPTIONS preflight requests to bypass API key
   if (
-    req.method === 'OPTIONS' || 
-    req.path === '/health' || 
-    req.path.startsWith('/docs') || 
-    req.path.startsWith('/images') || 
+    req.method === 'OPTIONS' ||
+    req.path === '/health' ||
+    req.path.startsWith('/docs') ||
+    req.path.startsWith('/images') ||
     req.originalUrl.startsWith('/api/images')
   ) {
     return next();
   }
 
-  // Get the API key from headers or query parameters
   const apiKey = req.header('x-api-key') || req.query.api_key;
 
   if (!apiKey) {
-    logger.warn(`API key missing on request to ${req.path}`);
+    logger.warn(`API key missing — ${req.method} ${req.path} from ${req.headers['origin'] || 'unknown origin'}`);
     return res.status(401).json({ success: false, message: 'Unauthorized: API key is missing. Please provide x-api-key header.' });
   }
 
   if (apiKey !== VALID_API_KEY) {
-    logger.warn(`Invalid API key provided: ${apiKey}`);
+    logger.warn(`Invalid API key attempt — ${req.method} ${req.path} from ${req.headers['origin'] || 'unknown origin'}`);
     return res.status(403).json({ success: false, message: 'Forbidden: Invalid API key.' });
+  }
+
+  // ← ADD: log successful external calls for monitoring
+  const origin = req.headers['origin'] || 'direct';
+  if (!['https://fashion-redemption.vercel.app', 'http://localhost:5173'].includes(origin)) {
+    logger.info(`External API access — ${req.method} ${req.path} from ${origin}`);
   }
 
   next();

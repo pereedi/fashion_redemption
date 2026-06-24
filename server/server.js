@@ -24,6 +24,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1); // required for correct IP detection behind Render proxy
 const PORT = process.env.PORT || 5000;
 
 // Middleware
