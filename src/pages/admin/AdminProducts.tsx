@@ -309,8 +309,13 @@ const AdminProducts = () => {
       {/* Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-start justify-center p-4 overflow-y-auto pt-24 pb-12">
-            <motion.div 
+          <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="product-modal-title"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-start justify-center       p-4 overflow-y-auto pt-24 pb-12"
+          >
+          <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 50 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 50 }}
@@ -318,8 +323,8 @@ const AdminProducts = () => {
               className="bg-white rounded-2xl shadow-[0_35px_60px_-15px_rgba(0,0,0,0.1)] w-full max-w-5xl min-h-[85vh] flex flex-col relative z-[201] border border-gray-100"
             >
               <div className="flex items-center justify-between p-8 border-b border-gray-100">
-                <h2 className="text-2xl font-serif font-bold tracking-tight uppercase">
-                  {editingProduct ? 'Edit Product' : 'Add New Product'}
+                <h2 id="product-modal-title" className="text-2xl font-serif font-bold tracking-tight uppercase">
+                    {editingProduct ? 'Edit Product' : 'Add New Product'}
                 </h2>
                 <button 
                   onClick={() => setIsModalOpen(false)}

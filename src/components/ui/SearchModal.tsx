@@ -97,6 +97,9 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                     />
 
                     <motion.div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Search products"
                         initial={{ opacity: 0, y: -20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
