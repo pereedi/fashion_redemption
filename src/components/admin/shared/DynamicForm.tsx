@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 
 export type FieldType = 'text' | 'number' | 'select' | 'textarea' | 'checkbox' | 'file' | 'section';
 
@@ -13,10 +13,14 @@ export interface FormField {
   label: string;
   type: FieldType;
   required?: boolean;
-  options?: FormOption[]; // For select fields
+  options?: FormOption[];
   placeholder?: string;
-  multiple?: boolean; // For select or file
-  prefix?: string; // e.g., "$"
+  multiple?: boolean;
+  prefix?: string;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
 }
 
 interface DynamicFormProps {
@@ -28,6 +32,7 @@ interface DynamicFormProps {
   submitLabel?: string;
   isLoading?: boolean;
   extension?: React.ReactNode;
+  onValidateExtension?: () => string | null; // external validator e.g. for variants
 }
 
 export const DynamicForm: React.FC<DynamicFormProps> = ({ 
@@ -38,10 +43,12 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
   onCancel,
   submitLabel = 'Save',
   isLoading = false,
-  extension
+  extension,
+  onValidateExtension
 }) => {
   const [formData, setFormData] = useState<any>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -64,17 +71,33 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     setFormData(updatedData);
     if (onChange) onChange(updatedData);
 
-    // Clear error
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
+    // Re-validate field on change if submit was already attempted
+    if (submitAttempted) {
+      const fieldError = validateField(fields.find(f => f.name === name)!, newValue);
+      setErrors(prev => ({ ...prev, [name]: fieldError }));
+    } else if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, isMultiple?: boolean) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files);
-      
-      // Helper function to compress image
+
+      // Validate file types
+      const invalidFiles = newFiles.filter(f => !f.type.startsWith('image/'));
+      if (invalidFiles.length > 0) {
+        setErrors(prev => ({ ...prev, [fieldName]: 'Only image files are allowed (JPG, PNG, WEBP)' }));
+        return;
+      }
+
+      // Validate file sizes (max 5MB each)
+      const oversizedFiles = newFiles.filter(f => f.size > 5 * 1024 * 1024);
+      if (oversizedFiles.length > 0) {
+        setErrors(prev => ({ ...prev, [fieldName]: `Some files exceed 5MB: ${oversizedFiles.map(f => f.name).join(', ')}` }));
+        return;
+      }
+
       const compressImage = (file: File): Promise<string> => {
         return new Promise((resolve) => {
           const reader = new FileReader();
@@ -84,76 +107,104 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
             img.src = event.target?.result as string;
             img.onload = () => {
               const canvas = document.createElement('canvas');
-              const MAX_WIDTH = 1600; // High resolution size
+              const MAX_WIDTH = 1600;
               const MAX_HEIGHT = 1600;
               let width = img.width;
               let height = img.height;
 
               if (width > height) {
-                if (width > MAX_WIDTH) {
-                  height *= MAX_WIDTH / width;
-                  width = MAX_WIDTH;
-                }
+                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
               } else {
-                if (height > MAX_HEIGHT) {
-                  width *= MAX_HEIGHT / height;
-                  height = MAX_HEIGHT;
-                }
+                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
               }
               canvas.width = width;
               canvas.height = height;
               const ctx = canvas.getContext('2d');
               if (ctx) {
                 ctx.drawImage(img, 0, 0, width, height);
-                // High quality JPEG
                 resolve(canvas.toDataURL('image/jpeg', 0.95));
               } else {
-                resolve(event.target?.result as string); // Fallback
+                resolve(event.target?.result as string);
               }
             };
-            img.onerror = () => {
-              resolve(event.target?.result as string); // Fallback if image fails to load
-            };
+            img.onerror = () => resolve(event.target?.result as string);
           };
-          reader.onerror = () => {
-            resolve(''); // Handle reader error
-          };
+          reader.onerror = () => resolve('');
         });
       };
 
-      // Process each file to Compressed Base64
       const processFiles = async () => {
         const base64Files = await Promise.all(newFiles.map(file => compressImage(file)));
-
         const currentValues = Array.isArray(formData[fieldName]) ? formData[fieldName] : [];
-        
-        const updatedValue = isMultiple 
-          ? [...currentValues, ...base64Files] 
-          : [base64Files[0]];
-
-        const updatedData = { 
-          ...formData, 
-          [fieldName]: updatedValue
-        };
-        
+        const updatedValue = isMultiple ? [...currentValues, ...base64Files] : [base64Files[0]];
+        const updatedData = { ...formData, [fieldName]: updatedValue };
         setFormData(updatedData);
         if (onChange) onChange(updatedData);
+        // Clear file error on successful upload
+        setErrors(prev => ({ ...prev, [fieldName]: '' }));
       };
 
       processFiles();
     }
   };
 
-  const validate = () => {
+  // Validate a single field and return error string or empty string
+  const validateField = (field: FormField, value: any): string => {
+    if (!field || field.type === 'section') return '';
+
+    const isEmpty = value === undefined || value === null || value === '' ||
+      (Array.isArray(value) && value.length === 0);
+
+    if (field.required && isEmpty) {
+      return `${field.label} is required`;
+    }
+
+    if (!isEmpty) {
+      if (field.type === 'number') {
+        const num = Number(value);
+        if (isNaN(num)) return `${field.label} must be a valid number`;
+        if (field.min !== undefined && num < field.min) return `${field.label} must be at least ${field.min}`;
+        if (field.max !== undefined && num > field.max) return `${field.label} must be no more than ${field.max}`;
+        if (num < 0) return `${field.label} cannot be negative`;
+      }
+
+      if (field.type === 'text' || field.type === 'textarea') {
+        const str = String(value).trim();
+        if (field.minLength && str.length < field.minLength)
+          return `${field.label} must be at least ${field.minLength} characters`;
+        if (field.maxLength && str.length > field.maxLength)
+          return `${field.label} must be no more than ${field.maxLength} characters`;
+      }
+
+      if (field.type === 'select' && !field.multiple) {
+        if (!value || value === '') return `Please select a ${field.label}`;
+      }
+    }
+
+    return '';
+  };
+
+  const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     let isValid = true;
 
     fields.forEach(field => {
-      if (field.required && !formData[field.name]) {
-        newErrors[field.name] = `${field.label} is required`;
+      if (field.type === 'section') return;
+      const error = validateField(field, formData[field.name]);
+      if (error) {
+        newErrors[field.name] = error;
         isValid = false;
       }
     });
+
+    // Run external validator (e.g. variants from AdminProducts)
+    if (onValidateExtension) {
+      const extError = onValidateExtension();
+      if (extError) {
+        newErrors['_extension'] = extError;
+        isValid = false;
+      }
+    }
 
     setErrors(newErrors);
     return isValid;
@@ -161,13 +212,38 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitAttempted(true);
     if (validate()) {
       onSubmit(formData);
+    } else {
+      // Scroll to first error
+      setTimeout(() => {
+        const firstError = document.querySelector('[data-error="true"]');
+        firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     }
   };
 
+  const errorCount = Object.values(errors).filter(Boolean).length;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-12">
+    <form onSubmit={handleSubmit} className="space-y-12" noValidate>
+
+      {/* Error Summary Banner */}
+      {submitAttempted && errorCount > 0 && (
+        <div className="flex items-start gap-3 p-4 bg-red-50 border border-luxury-red/30 rounded-lg">
+          <AlertCircle size={18} className="text-luxury-red flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xs font-bold text-luxury-red uppercase tracking-wider">
+              {errorCount} {errorCount === 1 ? 'field requires' : 'fields require'} attention
+            </p>
+            <p className="text-[11px] text-red-600 mt-1">
+              Please fix the highlighted fields before submitting.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
         {fields.map(field => {
           if (field.type === 'section') {
@@ -181,20 +257,26 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
             );
           }
 
+          const hasError = !!errors[field.name];
+
           return (
-            <div key={field.name} className={(field.type === 'textarea' || field.type === 'file') ? 'md:col-span-2' : ''}>
+            <div
+              key={field.name}
+              data-error={hasError ? 'true' : undefined}
+              className={(field.type === 'textarea' || field.type === 'file') ? 'md:col-span-2' : ''}
+            >
               <label className="block text-sm font-bold tracking-wide text-gray-400 uppercase mb-3">
                 {field.label} {field.required && <span className="text-luxury-red">*</span>}
               </label>
-              
+
               {field.type === 'textarea' ? (
                 <textarea
                   name={field.name}
                   value={formData[field.name] || ''}
                   onChange={handleChange}
-                  placeholder={field.placeholder}
+                  placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`}
                   rows={4}
-                  className={`w-full p-5 border ${errors[field.name] ? 'border-luxury-red' : 'border-gray-200'} rounded-lg text-sm focus:outline-none focus:border-luxury-red transition-all duration-300 bg-white shadow-sm hover:border-gray-300`}
+                  className={`w-full p-5 border ${hasError ? 'border-luxury-red bg-red-50/30' : 'border-gray-200'} rounded-lg text-sm focus:outline-none focus:border-luxury-red transition-all duration-300 bg-white shadow-sm hover:border-gray-300`}
                 />
               ) : field.type === 'select' ? (
                 <select
@@ -202,17 +284,15 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                   value={formData[field.name] || (field.multiple ? [] : '')}
                   onChange={handleChange}
                   multiple={field.multiple}
-                  className={`w-full h-14 px-5 border ${errors[field.name] ? 'border-luxury-red' : 'border-gray-200'} rounded-lg text-sm focus:outline-none focus:border-luxury-red transition-all duration-300 bg-white shadow-sm hover:border-gray-300 appearance-none`}
+                  className={`w-full h-14 px-5 border ${hasError ? 'border-luxury-red bg-red-50/30' : 'border-gray-200'} rounded-lg text-sm focus:outline-none focus:border-luxury-red transition-all duration-300 bg-white shadow-sm hover:border-gray-300 appearance-none`}
                 >
-                  {!field.multiple && <option value="">Select an option</option>}
+                  {!field.multiple && <option value="">Select {field.label}...</option>}
                   {field.options?.map(opt => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
               ) : field.type === 'checkbox' ? (
-                <div className="flex items-center p-4 bg-gray-50 rounded-lg border border-gray-100">
+                <div className={`flex items-center p-4 bg-gray-50 rounded-lg border ${hasError ? 'border-luxury-red' : 'border-gray-100'}`}>
                   <input
                     type="checkbox"
                     name={field.name}
@@ -223,38 +303,45 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                   <span className="ml-3 text-sm font-medium text-gray-700">{field.label}</span>
                 </div>
               ) : field.type === 'file' ? (
-                <div className="flex flex-col gap-4 p-6 bg-gray-50 rounded-xl border border-dashed border-gray-300 hover:border-luxury-red transition-colors">
-                  <input
-                    type="file"
-                    name={field.name}
-                    multiple={field.multiple}
-                    onChange={(e) => handleFileChange(e, field.name, field.multiple)}
-                    className="text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-black file:text-white hover:file:bg-luxury-red transition-all cursor-pointer"
-                  />
-                   {/* Image previews */}
-                   {Array.isArray(formData[field.name]) && formData[field.name].length > 0 && (
-                      <div className="flex flex-wrap gap-3 mt-4">
-                        {formData[field.name].map((imgUrl: string, idx: number) => (
-                          <div key={idx} className="relative w-24 h-28 border rounded-lg bg-white overflow-hidden shadow-sm group">
-                            <img src={imgUrl} alt="preview" className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newImages = [...formData[field.name]];
-                                newImages.splice(idx, 1);
-                                setFormData({ ...formData, [field.name]: newImages });
-                              }}
-                              className="absolute top-1 right-1 p-1 bg-white/90 rounded-full shadow-md text-luxury-red hover:bg-luxury-red hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                            >
-                              <X size={14} />
-                            </button>
-                            <div className="absolute inset-0 bg-black/5 flex items-end justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                              <span className="text-[7px] text-gray-500 font-bold p-1 w-full text-center bg-white/90">PREVIEW</span>
-                            </div>
+                <div className={`flex flex-col gap-4 p-6 bg-gray-50 rounded-xl border border-dashed ${hasError ? 'border-luxury-red bg-red-50/20' : 'border-gray-300'} hover:border-luxury-red transition-colors`}>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="file"
+                      name={field.name}
+                      multiple={field.multiple}
+                      accept="image/*"
+                      onChange={(e) => handleFileChange(e, field.name, field.multiple)}
+                      className="text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-bold file:bg-black file:text-white hover:file:bg-luxury-red transition-all cursor-pointer"
+                    />
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wider">
+                      JPG, PNG, WEBP · Max 5MB each
+                    </span>
+                  </div>
+                  {Array.isArray(formData[field.name]) && formData[field.name].length > 0 && (
+                    <div className="flex flex-wrap gap-3 mt-2">
+                      {formData[field.name].map((imgUrl: string, idx: number) => (
+                        <div key={idx} className="relative w-24 h-28 border rounded-lg bg-white overflow-hidden shadow-sm group">
+                          <img src={imgUrl} alt="preview" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newImages = [...formData[field.name]];
+                              newImages.splice(idx, 1);
+                              setFormData({ ...formData, [field.name]: newImages });
+                            }}
+                            className="absolute top-1 right-1 p-1 bg-white/90 rounded-full shadow-md text-luxury-red hover:bg-luxury-red hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                          >
+                            <X size={14} />
+                          </button>
+                          <div className="absolute bottom-0 left-0 right-0 bg-white/90 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[7px] text-gray-500 font-bold w-full text-center block">
+                              {idx === 0 ? 'PRIMARY' : `IMG ${idx + 1}`}
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                   )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="relative">
@@ -268,21 +355,36 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                     name={field.name}
                     value={formData[field.name] || ''}
                     onChange={handleChange}
-                    placeholder={field.placeholder}
-                    className={`w-full h-14 ${field.prefix ? 'pl-14' : 'px-5'} border ${errors[field.name] ? 'border-luxury-red' : 'border-gray-200'} rounded-lg text-sm focus:outline-none focus:border-luxury-red transition-all duration-300 bg-white shadow-sm hover:border-gray-300`}
+                    placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`}
+                    min={field.min}
+                    max={field.max}
+                    className={`w-full h-14 ${field.prefix ? 'pl-14' : 'px-5'} border ${hasError ? 'border-luxury-red bg-red-50/30' : 'border-gray-200'} rounded-lg text-sm focus:outline-none focus:border-luxury-red transition-all duration-300 bg-white shadow-sm hover:border-gray-300`}
                   />
                 </div>
               )}
-              
-              {errors[field.name] && (
-                <p className="text-luxury-red text-[10px] font-bold uppercase tracking-wider mt-2 ml-1">{errors[field.name]}</p>
+
+              {hasError && (
+                <p className="flex items-center gap-1.5 text-luxury-red text-[10px] font-bold uppercase tracking-wider mt-2 ml-1">
+                  <AlertCircle size={11} />
+                  {errors[field.name]}
+                </p>
               )}
             </div>
           );
         })}
       </div>
-      
+
       {extension && <div className="animate-fade-in">{extension}</div>}
+
+      {/* Extension-level error (e.g. variants) */}
+      {errors['_extension'] && (
+        <div className="flex items-center gap-2 p-3 bg-red-50 border border-luxury-red/30 rounded-lg">
+          <AlertCircle size={14} className="text-luxury-red flex-shrink-0" />
+          <p className="text-[11px] font-bold text-luxury-red uppercase tracking-wider">
+            {errors['_extension']}
+          </p>
+        </div>
+      )}
 
       <div className="flex items-center justify-end gap-6 pt-10 border-t border-gray-100">
         <button
@@ -299,10 +401,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
           className="px-12 py-4 bg-luxury-red text-white text-xs font-bold tracking-[0.2em] uppercase rounded-lg hover:bg-black transition-all duration-500 shadow-xl shadow-luxury-red/10 flex items-center justify-center min-w-[200px]"
         >
           {isLoading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : (
-            submitLabel
-          )}
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : submitLabel}
         </button>
       </div>
     </form>

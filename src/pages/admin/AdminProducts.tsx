@@ -231,30 +231,47 @@ const AdminProducts = () => {
   ];
 
   const formFields: FormField[] = useMemo(() => [
-    { name: 'basic_info', label: 'Product Basics', type: 'section' },
-    { name: 'name', label: 'Name', type: 'text', required: true },
-    { name: 'description', label: 'Description', type: 'textarea', required: true },
-    
-    { name: 'classification', label: 'Categorization', type: 'section' },
-    { 
-      name: 'category', 
-      label: 'Main Category', 
-      type: 'select', 
-      required: true,
-      options: ALL_CATEGORIES
-    },
-    { 
-      name: 'type', 
-      label: 'Sub-Category / Type', 
-      type: 'select', 
-      required: true,
-      options: selectedCategory ? CATEGORY_MAP[selectedCategory]?.types || [] : []
-    },
- 
-    { name: 'pricing_media', label: 'Pricing & Images', type: 'section' },
-    { name: 'basePrice', label: 'Price (Esp)', type: 'number', required: true, prefix: 'Esp' },
-    { name: 'images', label: 'Images (URLs)', type: 'file', multiple: true, required: !editingProduct }
-  ], [selectedCategory, editingProduct]);
+  { name: 'basic_info', label: 'Product Basics', type: 'section' },
+  { name: 'name', label: 'Name', type: 'text', required: true, minLength: 3, maxLength: 100 },
+  { name: 'description', label: 'Description', type: 'textarea', required: true, minLength: 10, maxLength: 1000 },
+  
+  { name: 'classification', label: 'Categorization', type: 'section' },
+  { name: 'category', label: 'Main Category', type: 'select', required: true, options: ALL_CATEGORIES },
+  { 
+    name: 'type', label: 'Sub-Category / Type', type: 'select', required: true,
+    options: selectedCategory ? CATEGORY_MAP[selectedCategory]?.types || [] : []
+  },
+
+  { name: 'pricing_media', label: 'Pricing & Images', type: 'section' },
+  { name: 'basePrice', label: 'Price (Esp)', type: 'number', required: true, min: 1, prefix: 'Esp' },
+  { name: 'images', label: 'Images', type: 'file', multiple: true, required: !editingProduct }
+], [selectedCategory, editingProduct]);
+
+const validateVariants = (): string | null => {
+  if (variants.length === 0) return null;
+
+  for (let i = 0; i < variants.length; i++) {
+    const v = variants[i];
+
+    if (!v.size || v.size.trim() === '') {
+      return `Variant ${i + 1} is missing a size`;
+    }
+
+    if (
+      v.stock === undefined ||
+      v.stock === null ||
+      isNaN(Number(v.stock))
+    ) {
+      return `Variant ${i + 1} is missing a stock value`;
+    }
+
+    if (Number(v.stock) < 0) {
+      return `Variant ${i + 1} stock cannot be negative`;
+    }
+  }
+
+  return null;
+};
 
   if (loading) return (
     <div className="flex justify-center items-center h-64">
@@ -337,30 +354,27 @@ const AdminProducts = () => {
               <div className="px-10 py-12 flex-1 scrollbar-hide">
                 <div className="mb-10">
                   <DynamicForm 
-                    fields={formFields} 
-                    initialData={editingProduct ? {
-                      ...editingProduct,
-                      basePrice: editingProduct.basePrice || editingProduct.base_price
-                    } : { category: selectedCategory }}
-                    onChange={(data) => {
-                      if (data.category !== selectedCategory) {
-                        setSelectedCategory(data.category);
-                      }
-                    }}
-                    onSubmit={handleSubmit}
-                    onCancel={() => setIsModalOpen(false)}
-                    submitLabel={editingProduct ? 'Update Product' : 'Create Product'}
-                    isLoading={isSubmitting}
-                    // Custom Footer/Extension
-                    extension={
-                      <div className="mt-12">
-                        <VariantEditor 
-                          variants={variants} 
-                          onChange={setVariants} 
-                        />
-                      </div>
-                    }
-                  />
+  fields={formFields} 
+  initialData={editingProduct ? {
+    ...editingProduct,
+    basePrice: editingProduct.basePrice || editingProduct.base_price
+  } : { category: selectedCategory }}
+  onChange={(data) => {
+    if (data.category !== selectedCategory) {
+      setSelectedCategory(data.category);
+    }
+  }}
+  onSubmit={handleSubmit}
+  onCancel={() => setIsModalOpen(false)}
+  submitLabel={editingProduct ? 'Update Product' : 'Create Product'}
+  isLoading={isSubmitting}
+  onValidateExtension={validateVariants}
+  extension={
+    <div className="mt-12">
+      <VariantEditor variants={variants} onChange={setVariants} />
+    </div>
+  }
+/>
                 </div>
               </div>
             </motion.div>
