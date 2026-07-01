@@ -15,9 +15,9 @@ const HomePage: React.FC = () => {
             <Navbar />
             <Hero />
             <TrendingCollections />
-            <AestheticSection />
             <NewArrivals />
             <SaleBanner />
+            <AestheticSection />
             <Newsletter />
         </>
     );
