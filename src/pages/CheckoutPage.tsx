@@ -6,7 +6,6 @@ import CheckoutSteps from '../components/checkout/CheckoutSteps';
 import ShippingForm from '../components/checkout/ShippingForm';
 import ShippingMethodSelector from '../components/checkout/ShippingMethodSelector';
 import PaymentMethodSelector from '../components/checkout/PaymentMethodSelector';
-import CardForm from '../components/checkout/CardForm';
 import OrderSummary from '../components/checkout/OrderSummary';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -29,7 +28,7 @@ const CheckoutPage: React.FC = () => {
     cvv: ''
   });
   const [selectedShipping, setSelectedShipping] = useState('express');
-  const [selectedPayment, setSelectedPayment] = useState('card');
+  const [selectedPayment, setSelectedPayment] = useState('espees');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { cartItems, totalSubtotal, clearCart } = useCart();
 
@@ -235,10 +234,7 @@ const CheckoutPage: React.FC = () => {
                     selectedId={selectedPayment}
                     onSelect={setSelectedPayment}
                   />
-                  
-                  {selectedPayment === 'card' && (
-                    <CardForm formData={formData} onChange={handleInputChange} />
-                  )}
+
 
                   <div className="flex items-center gap-8 pt-8 border-t border-black/5">
                     <button 
