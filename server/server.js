@@ -17,6 +17,8 @@ import { fileURLToPath } from 'url';
 import { generateDocsHTML } from './utils/docsTemplate.js';
 import { apiKeyAuth } from './middleware/apiKeyAuth.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
+import bulkProductRoutes from './routes/bulkProductRoutes.js';
+app.use('/api/admin', bulkProductRoutes);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

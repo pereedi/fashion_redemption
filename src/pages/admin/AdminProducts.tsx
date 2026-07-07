@@ -5,10 +5,12 @@ import { useAuth } from '../../context/AuthContext';
 import { DataTable, type Column } from '../../components/admin/shared/DataTable';
 import { DynamicForm, type FormField } from '../../components/admin/shared/DynamicForm';
 import VariantEditor, { type Variant } from '../../components/admin/ProductEditor/VariantEditor';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORY_MAP, ALL_CATEGORIES } from '../../config/categoryMapping';
 import API_BASE_URL from '../../config/api';
+import BulkUploadModal from '../../components/admin/BulkUpload/BulkUploadModal';
+
 
 const AdminProducts = () => {
   const { token } = useAuth();
@@ -20,6 +22,7 @@ const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   // Form Extension State
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -188,6 +191,7 @@ const AdminProducts = () => {
       )
     },
     { header: 'ID', accessorKey: 'id' },
+    { header: 'SKU', accessorKey: 'sku' },
     { header: 'Name', accessorKey: 'name' },
     { 
       header: 'Category', 
@@ -312,6 +316,13 @@ const validateVariants = (): string | null => {
             >
               <Plus size={16} /> Add Product
             </button>
+            <button
+             onClick={() => setIsBulkModalOpen(true)}
+             className="flex items-center justify-center gap-2 bg-white border border-gray-200            text-gray-600 px-4 py-2 rounded-md hover:border-luxury-red hover:text-luxury-red transition-all text-sm font-medium shadow-sm"
+>
+             <Upload size={16} /> Bulk Upload
+           </button>
+
           </div>
         </div>
       </div>
@@ -381,6 +392,11 @@ const validateVariants = (): string | null => {
           </div>
         )}
       </AnimatePresence>
+      <BulkUploadModal
+  isOpen={isBulkModalOpen}
+  onClose={() => setIsBulkModalOpen(false)}
+  onSuccess={() => { setIsBulkModalOpen(false); fetchProducts(); }}
+/>
     </div>
   );
 };
