@@ -3,7 +3,6 @@ import multer from 'multer';
 import * as XLSX from 'xlsx';
 import ProductRepository from '../repositories/ProductRepository.js';
 import { logger } from '../utils/logger.js';
-import { CATEGORY_MAP } from '../config/categoryMapping.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
