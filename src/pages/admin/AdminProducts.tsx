@@ -236,6 +236,7 @@ const AdminProducts = () => {
 
   const formFields: FormField[] = useMemo(() => [
   { name: 'basic_info', label: 'Product Basics', type: 'section' },
+  { name: 'sku', label: 'SKU', type: 'text', required: true, minLength: 3, maxLength: 50 },
   { name: 'name', label: 'Name', type: 'text', required: true, minLength: 3, maxLength: 100 },
   { name: 'description', label: 'Description', type: 'textarea', required: true, minLength: 10, maxLength: 1000 },
   

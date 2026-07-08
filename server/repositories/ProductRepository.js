@@ -339,10 +339,11 @@ class ProductRepository {
   async create(productData) {
     const { images, variants, ...baseData } = productData;
     
-    const allowedColumns = ['external_id', 'name', 'description', 'category', 'type', 'base_price', 'rating', 'review_count', 'on_sale', 'sale_price'];
+    const allowedColumns = ['sku', 'external_id', 'name', 'description', 'category', 'type', 'base_price', 'rating', 'review_count', 'on_sale', 'sale_price'];
     const sanitizedData = {};
     
     if (baseData.basePrice !== undefined) baseData.base_price = baseData.basePrice;
+    if (baseData.sku) baseData.sku = baseData.sku.trim().toUpperCase();
     
     allowedColumns.forEach(col => {
       if (baseData[col] !== undefined) {
@@ -357,7 +358,7 @@ class ProductRepository {
       try {
         const [productId] = await trx('products').insert({
           ...sanitizedData,
-          external_id: sanitizedData.external_id || baseData.id || `prod_${Date.now()}`
+          external_id: sanitizedData.external_id || baseData.id || (sanitizedData.sku ? `prod_${sanitizedData.sku}` : `prod_${Date.now()}`)
         });
 
         if (finalImages && finalImages.length > 0) {
@@ -393,10 +394,11 @@ class ProductRepository {
   async update(id, data) {
     const { images, variants, ...baseData } = data;
     
-    const allowedColumns = ['external_id', 'name', 'description', 'category', 'type', 'base_price', 'rating', 'review_count', 'on_sale', 'sale_price'];
+    const allowedColumns = ['sku', 'external_id', 'name', 'description', 'category', 'type', 'base_price', 'rating', 'review_count', 'on_sale', 'sale_price'];
     const sanitizedData = {};
     
     if (baseData.basePrice !== undefined) baseData.base_price = baseData.basePrice;
+    if (baseData.sku) baseData.sku = baseData.sku.trim().toUpperCase();
     
     allowedColumns.forEach(col => {
       if (baseData[col] !== undefined) {

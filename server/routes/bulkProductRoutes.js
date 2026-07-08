@@ -5,7 +5,20 @@ import ProductRepository from '../repositories/ProductRepository.js';
 import { logger } from '../utils/logger.js';
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+// Per-file cap: 2MB. Allow up to 500 files so bulk batches of 100+ images work fine.
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 2 * 1024 * 1024,   // 2 MB per file
+    files: 501                    // 1 CSV + up to 500 images
+  }
+});
+
+const uploadFields = upload.fields([
+  { name: 'file',   maxCount: 1   },
+  { name: 'images', maxCount: 500 }  // up to 500 product images per batch
+]);
 
 const REQUIRED_COLUMNS = ['sku', 'name', 'description', 'category', 'type', 'price', 'size', 'colour', 'quantity'];
 
@@ -27,21 +40,28 @@ const validateRow = (row, index) => {
   return errors;
 };
 
-router.post('/bulk-upload', upload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+router.post('/bulk-upload', uploadFields, async (req, res) => {
+  const files = req.files || {};
+  const fileArray = files['file'];
+  const imageFiles = files['images'] || [];
 
+  if (!fileArray || fileArray.length === 0) {
+    return res.status(400).json({ success: false, message: 'No CSV or Excel template file uploaded' });
+  }
+
+  const sheetFile = fileArray[0];
   const allowedTypes = [
     'text/csv',
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   ];
 
-  if (!allowedTypes.includes(req.file.mimetype)) {
-    return res.status(400).json({ success: false, message: 'Only CSV or Excel files are allowed' });
+  if (!allowedTypes.includes(sheetFile.mimetype)) {
+    return res.status(400).json({ success: false, message: 'Only CSV or Excel files are allowed for the template' });
   }
 
   try {
-    const rows = parseSheet(req.file.buffer, req.file.mimetype);
+    const rows = parseSheet(sheetFile.buffer, sheetFile.mimetype);
     if (rows.length < 2) {
       return res.status(400).json({ success: false, message: 'File is empty or has no data rows' });
     }
@@ -81,8 +101,30 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
     // Group rows by SKU — multiple rows = multiple variants (sizes/colours)
     const productMap = new Map();
     dataRows.forEach(row => {
-      const sku = row.sku.toUpperCase();
+      const sku = row.sku.toUpperCase().trim();
       if (!productMap.has(sku)) {
+        // Find matching image files by filename matching the SKU
+        const cleanedSku = sku.toLowerCase();
+        const matchedFiles = imageFiles.filter(imgFile => {
+          const originalName = imgFile.originalname.toLowerCase();
+          const lastDotIndex = originalName.lastIndexOf('.');
+          const nameWithoutExt = lastDotIndex !== -1 ? originalName.substring(0, lastDotIndex) : originalName;
+          const cleanedName = nameWithoutExt.trim();
+
+          // Matches "SKU001" or starts with "SKU001_" or "SKU001-"
+          if (cleanedName === cleanedSku) return true;
+          if (cleanedName.startsWith(cleanedSku + '_') || cleanedName.startsWith(cleanedSku + '-')) return true;
+          return false;
+        });
+
+        // Sort matching files alphabetically so sequence order is correct (e.g. _1 before _2)
+        matchedFiles.sort((a, b) => a.originalname.localeCompare(b.originalname, undefined, { numeric: true, sensitivity: 'base' }));
+
+        // Convert image buffer to base64 string
+        const base64Images = matchedFiles.map(imgFile => {
+          return `data:${imgFile.mimetype};base64,${imgFile.buffer.toString('base64')}`;
+        });
+
         productMap.set(sku, {
           sku,
           name: row.name,
@@ -91,11 +133,11 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
           type: row.type.toLowerCase(),
           base_price: Number(row.price),
           external_id: `prod_${sku}`,
-          // Image will be named after SKU e.g. SKU001_1.jpg
-          images: [`/images/products/${sku}_1.jpg`],
+          images: base64Images.length > 0 ? base64Images : [`/images/products/${sku}_1.jpg`],
           variants: []
         });
       }
+      
       // Each row adds a variant
       productMap.get(sku).variants.push({
         size: row.size,
@@ -112,7 +154,7 @@ router.post('/bulk-upload', upload.single('file'), async (req, res) => {
         await ProductRepository.create(productData);
         results.added++;
       } catch (err) {
-        if (err.code === 'ER_DUP_ENTRY') {
+        if (err.code === 'ER_DUP_ENTRY' || err.message.includes('unique') || err.message.includes('duplicate')) {
           results.skipped++;
         } else {
           results.errors.push(`SKU ${sku}: ${err.message}`);
