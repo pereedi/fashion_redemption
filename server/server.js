@@ -18,7 +18,6 @@ import { generateDocsHTML } from './utils/docsTemplate.js';
 import { apiKeyAuth } from './middleware/apiKeyAuth.js';
 import { rateLimiter } from './middleware/rateLimiter.js';
 import bulkProductRoutes from './routes/bulkProductRoutes.js';
-app.use('/api/admin', bulkProductRoutes);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,6 +62,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin', bulkProductRoutes);
 app.use('/api/images', imageRoutes);
 
 // Global Error Handler for JSON parsing errors
