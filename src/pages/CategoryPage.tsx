@@ -8,6 +8,7 @@ import FilterSidebar from '../components/ui/FilterSidebar';
 import ProductGrid from '../sections/ProductGrid';
 import Newsletter from '../sections/Newsletter';
 import { useSEO } from '../hooks/useSEO';
+import { useFacets } from '../hooks/useFacets';
 
 interface CategoryPageProps {
     gender?: 'men' | 'women' | 'kids';
@@ -23,12 +24,16 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ gender: propGender }) => {
     useSEO({ title: categoryTitle, description: `Shop our latest ${gender} collection.` });
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [filters, setFilters] = useState({
-        type: '',
-        size: '',
-        color: '',
+        type: [] as string[],
+        size: [] as string[],
+        color: [] as string[],
+        minPrice: null as number | null,
+        maxPrice: null as number | null,
         sort: 'newest',
         page: 1
     });
+
+    const facets = useFacets({ category: gender });
 
     const handleFilterChange = (newFilters: any) => {
         setFilters(prev => ({ 
@@ -78,7 +83,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ gender: propGender }) => {
 
                 <div className="flex gap-12 relative">
                     <aside className="hidden md:block w-64 flex-shrink-0">
-                        <FilterSidebar onFilterChange={handleFilterChange} />
+                            <FilterSidebar facets={facets} filters={filters} onFilterChange={handleFilterChange} />
                     </aside>
 
                     <main className="flex-grow">
@@ -114,7 +119,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ gender: propGender }) => {
                                     <X size={24} />
                                 </button>
                             </div>
-                            <FilterSidebar onFilterChange={handleFilterChange} />
+                        <FilterSidebar facets={facets} filters={filters} onFilterChange={handleFilterChange} />
                         </motion.div>
                     </>
                 )}

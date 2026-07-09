@@ -20,10 +20,27 @@ const ProductGrid: React.FC<ProductGridProps> = ({ category, filters, onPageChan
         const fetchProducts = async () => {
             setIsLoading(true);
             try {
-                const params = new URLSearchParams({
-                    ...(category && { category }),
-                    ...filters
-                });
+                const params = new URLSearchParams();
+                if (category) params.set('category', category);
+
+                const f: Record<string, unknown> = filters ?? {};
+
+                const arrayKeys = ['type', 'size', 'color'];
+                for (const key of arrayKeys) {
+                    const value = f[key];
+                    if (Array.isArray(value) && value.length > 0) {
+                        params.set(key, (value as string[]).join(','));
+                    }
+                }
+
+                const scalarKeys = ['sort', 'page', 'filter', 'q', 'minPrice', 'maxPrice', 'brand'];
+                for (const key of scalarKeys) {
+                    const value = f[key];
+                    if (value !== undefined && value !== null && value !== '') {
+                        params.set(key, String(value));
+                    }
+                }
+
                 const response = await apiFetch(`${API_BASE_URL}/api/products?${params}`);
                 if (!response.ok) {
                     throw new Error(`Server returned ${response.status}`);

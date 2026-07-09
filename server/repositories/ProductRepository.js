@@ -155,7 +155,15 @@ class ProductRepository {
       }
 
       if (filters.type && filters.type !== 'undefined' && filters.type !== '') {
-        query = query.whereRaw('LOWER(type) = ?', [filters.type.toLowerCase()]);
+        const types = Array.isArray(filters.type)
+          ? filters.type
+          : String(filters.type).split(',').map(t => t.trim()).filter(Boolean);
+        const normalized = types.map(t => t.toLowerCase()).filter(Boolean);
+        if (normalized.length === 1) {
+          query = query.whereRaw('LOWER(type) = ?', [normalized[0]]);
+        } else if (normalized.length > 1) {
+          query = query.whereRaw('LOWER(type) IN (' + normalized.map(() => '?').join(',') + ')', normalized);
+        }
       }
 
       if (filters.name) {
@@ -186,19 +194,43 @@ class ProductRepository {
       }
 
       if (filters.color && filters.color !== 'undefined') {
-        query = query.whereIn('products.id', function() {
-          this.select('product_id')
-            .from('product_variants')
-            .whereRaw('LOWER(color) LIKE ?', [`%${filters.color.toLowerCase()}%`]);
-        });
+        const colors = Array.isArray(filters.color)
+          ? filters.color
+          : String(filters.color).split(',').map(c => c.trim()).filter(Boolean);
+        const normalized = colors.map(c => c.toLowerCase()).filter(Boolean);
+        if (normalized.length > 0) {
+          query = query.whereIn('products.id', function() {
+            this.select('product_id')
+              .from('product_variants')
+              .where(function() {
+                normalized.forEach((c, i) => {
+                  const clause = db.raw('LOWER(color) LIKE ?', [`%${c}%`]);
+                  if (i === 0) this.where(clause);
+                  else this.orWhere(clause);
+                });
+              });
+          });
+        }
       }
 
       if (filters.size && filters.size !== 'undefined') {
-        query = query.whereIn('products.id', function() {
-          this.select('product_id')
-            .from('product_variants')
-            .whereRaw('LOWER(size) = ?', [filters.size.toLowerCase()]);
-        });
+        const sizes = Array.isArray(filters.size)
+          ? filters.size
+          : String(filters.size).split(',').map(s => s.trim()).filter(Boolean);
+        const normalized = sizes.map(s => s.toLowerCase()).filter(Boolean);
+        if (normalized.length === 1) {
+          query = query.whereIn('products.id', function() {
+            this.select('product_id')
+              .from('product_variants')
+              .whereRaw('LOWER(size) = ?', [normalized[0]]);
+          });
+        } else if (normalized.length > 1) {
+          query = query.whereIn('products.id', function() {
+            this.select('product_id')
+              .from('product_variants')
+              .whereRaw('LOWER(size) IN (' + normalized.map(() => '?').join(',') + ')', normalized);
+          });
+        }
       }
 
       if (filters.minPrice !== undefined && filters.minPrice !== 'undefined') {
@@ -271,6 +303,70 @@ class ProductRepository {
     } catch (err) {
       logger.error('Error in ProductRepository.getAll', { error: err.message, filters, stack: err.stack });
       return { products: [], total: 0 };
+    }
+  }
+
+  async getFacets(filters = {}) {
+    try {
+      const scope = db('products').select('products.id', 'products.base_price');
+
+      if (filters.category && filters.category !== 'undefined') {
+        scope.whereRaw('LOWER(category) = ?', [filters.category.toLowerCase()]);
+      }
+
+      if (filters.q && filters.q !== 'undefined') {
+        scope.where(function () {
+          this.where('products.name', 'like', `%${filters.q}%`)
+            .orWhere('products.description', 'like', `%${filters.q}%`);
+        });
+      }
+
+      if (filters.filter === 'new') {
+        scope.orderBy('products.created_at', 'desc').limit(12);
+      } else if (filters.filter === 'trending') {
+        scope.whereRaw('LOWER(category) = ?', ['women']);
+      }
+
+      const productIds = (await scope).map(p => p.id);
+      if (productIds.length === 0) {
+        return { types: [], colors: [], sizes: [], priceMin: 0, priceMax: 0 };
+      }
+
+      const [typeRows, variantRows, priceRows] = await Promise.all([
+        db('products').whereIn('id', productIds).distinct('type'),
+        db('product_variants').whereIn('product_id', productIds).select('size', 'color'),
+        db('products').whereIn('id', productIds).min('base_price as min').max('base_price as max').first()
+      ]);
+
+      const types = typeRows.map(r => r.type).filter(Boolean).sort();
+      const sizeSet = new Set();
+      const colorSet = new Set();
+      variantRows.forEach(v => {
+        if (v.size) sizeSet.add(v.size);
+        if (v.color) colorSet.add(v.color);
+      });
+
+      const sizeOrder = ['XS', 'S', 'SM', 'M', 'SL', 'L', 'XL', 'XXL'];
+      const sizes = [...sizeSet].sort((a, b) => {
+        const ia = sizeOrder.indexOf(a);
+        const ib = sizeOrder.indexOf(b);
+        if (ia === -1 && ib === -1) return a.localeCompare(b);
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      });
+      const colors = [...colorSet].sort();
+
+      return {
+        types,
+        colors,
+        sizes,
+        priceMin: Math.floor(Number(priceRows?.min || 0)),
+        priceMax: Math.ceil(Number(priceRows?.max || 0))
+      };
+    } catch (err) {
+      logger.error('Error in ProductRepository.getFacets', { error: err.message, filters });
+      return { types: [], colors: [], sizes: [], priceMin: 0, priceMax: 0 };
     }
   }
 

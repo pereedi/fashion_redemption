@@ -172,6 +172,18 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ─── GET /facets ────────────────────────────────────────────────────────────
+
+router.get('/facets', async (req, res) => {
+  try {
+    const { category, q, filter } = req.query;
+    const facets = await ProductRepository.getFacets({ category, q, filter });
+    res.json({ success: true, ...facets });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to retrieve facets' });
+  }
+});
+
 // ─── POST /chatbot/query ──────────────────────────────────────────────────────
 
 router.post('/chatbot/query', async (req, res) => {

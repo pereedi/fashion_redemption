@@ -7,6 +7,7 @@ import ProductGrid from '../sections/ProductGrid.tsx';
 import Newsletter from '../sections/Newsletter.tsx';
 import CollectionsNavbar from '../components/layout/CollectionsNavbar.tsx';
 import SaleBanner from '../sections/SaleBanner.tsx';
+import { useFacets } from '../hooks/useFacets.ts';
 
 interface CollectionsPageProps {
     filter?: string;
@@ -15,13 +16,17 @@ interface CollectionsPageProps {
 const CollectionsPage: React.FC<CollectionsPageProps> = ({ filter: initialFilter }) => {
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [filters, setFilters] = useState({
-        type: '',
-        size: '',
-        color: '',
+        type: [] as string[],
+        size: [] as string[],
+        color: [] as string[],
+        minPrice: null as number | null,
+        maxPrice: null as number | null,
         sort: 'newest',
         page: 1,
         filter: initialFilter || ''
     });
+
+    const facets = useFacets({ filter: initialFilter || '' });
 
     const handleFilterChange = (newFilters: any) => {
         setFilters(prev => ({ 
@@ -69,7 +74,7 @@ const CollectionsPage: React.FC<CollectionsPageProps> = ({ filter: initialFilter
 
                 <div className="flex gap-12 relative">
                     <aside className="hidden md:block w-64 flex-shrink-0">
-                        <FilterSidebar onFilterChange={handleFilterChange} />
+                            <FilterSidebar facets={facets} filters={filters} onFilterChange={handleFilterChange} />
                     </aside>
 
                     <main className="flex-grow">
@@ -104,7 +109,7 @@ const CollectionsPage: React.FC<CollectionsPageProps> = ({ filter: initialFilter
                                     <X size={24} />
                                 </button>
                             </div>
-                            <FilterSidebar onFilterChange={handleFilterChange} />
+                        <FilterSidebar facets={facets} filters={filters} onFilterChange={handleFilterChange} />
                         </motion.div>
                     </>
                 )}
