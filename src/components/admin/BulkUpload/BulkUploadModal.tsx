@@ -416,13 +416,30 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onSu
                       </ul>
                     )}
                     {status === 'success' && result.results && (
-                      <div className="flex gap-4 mt-2">
-                        <span className="text-[11px] text-green-600">✓ {result.results.added} added</span>
-                        {result.results.skipped > 0 && (
-                          <span className="text-[11px] text-amber-600">⊘ {result.results.skipped} skipped (duplicate SKU)</span>
-                        )}
-                      </div>
-                    )}
+  <div className="flex gap-4 mt-2 flex-wrap">
+    <span className="text-[11px] text-green-600">✓ {result.results.added} added</span>
+    {result.results.skipped > 0 && (
+      <span className="text-[11px] text-amber-600">⊘ {result.results.skipped} skipped (duplicate SKU)</span>
+    )}
+    {result.results.skippedRows?.length > 0 && (
+      <span className="text-[11px] text-orange-600">⚠ {result.results.skippedRows.length} rows skipped (missing data)</span>
+    )}
+  </div>
+)}
+
+{/* Show skipped row details */}
+{status === 'success' && result.results?.skippedRows?.length > 0 && (
+  <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+    <p className="text-[10px] font-bold uppercase tracking-wider text-orange-700 mb-2">
+      Rows skipped — missing required data:
+    </p>
+    <ul className="max-h-32 overflow-y-auto scrollbar-hide space-y-1">
+      {result.results.skippedRows.map((err: string, i: number) => (
+        <li key={i} className="text-[11px] text-orange-600">• {err}</li>
+      ))}
+    </ul>
+  </div>
+)}
                   </div>
                 </div>
               )}

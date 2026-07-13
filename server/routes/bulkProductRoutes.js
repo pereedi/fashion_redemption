@@ -168,24 +168,21 @@ router.post('/bulk-upload', uploadFields, async (req, res) => {
       return obj;
     }).filter(row => row.sku && row.sku.trim() !== ''); // skip blank rows
 
-    // Validate all rows before importing anything
-    const allErrors = [];
-    dataRows.forEach((row, i) => {
-      allErrors.push(...validateRow(row, i + 2));
-    });
-
-    if (allErrors.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed — fix these errors and re-upload.',
-        errors: allErrors
-      });
-    }
+    // Validate rows but don't block — skip invalid rows and report them
+const skippedRows = [];
+const validDataRows = dataRows.filter((row, i) => {
+  const rowErrors = validateRow(row, i + 2);
+  if (rowErrors.length > 0) {
+    skippedRows.push(...rowErrors);
+    return false;
+  }
+  return true;
+});
 
     // ── Group by SKU (multiple rows = multiple size/colour variants) ──────────
     const productMap = new Map();
 
-    dataRows.forEach(row => {
+    validDataRows.forEach(row => {
       const sku = row.sku.toUpperCase().trim();
 
       if (!productMap.has(sku)) {
@@ -266,11 +263,14 @@ router.post('/bulk-upload', uploadFields, async (req, res) => {
       }
     }
 
-    return res.json({
-      success: true,
-      message: `Import complete. ${results.added} product${results.added !== 1 ? 's' : ''} added, ${results.skipped} skipped (already exist).`,
-      results
-    });
+   return res.json({
+    success: true,
+    message: `Import complete. ${results.added} product${results.added !== 1 ? 's' : ''}   added, ${results.skipped} skipped (duplicate SKU)${skippedRows.length > 0 ? `, $  {skippedRows.length} rows skipped due to missing data` : ''}.`,
+    results: {
+      ...results,
+      skippedRows
+    }
+  });
 
   } catch (err) {
     logger.error('Bulk upload failed', { error: err.message, stack: err.stack });
