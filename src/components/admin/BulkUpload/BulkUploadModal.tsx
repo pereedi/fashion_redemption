@@ -131,29 +131,54 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onSu
 
   // ── Template download ───────────────────────────────────────────────────────
   const downloadTemplate = () => {
-    const headers = [
-      'category_id', 'brand name', 'product name', 'description',
-      'sku', 'cost_price', 'selling_price', 'quantity', 'size', 'colour', 'image'
-    ];
-    const examples = [
-      ['10', 'Fashion Redemption', 'Elegant Black Dress',  'A beautiful formal dress', 'SKU001', '12000', '25000', '10', 'M',  'Black', 'SKU001_1.jpg'],
-      ['10', 'Fashion Redemption', 'Elegant Black Dress',  'A beautiful formal dress', 'SKU001', '12000', '25000', '8',  'L',  'Black', 'SKU001_1.jpg'],
-      ['1',  'Fashion Redemption', 'Classic White Shirt',  'Premium cotton shirt',     'SKU002', '8000',  '18000', '15', 'M',  'White', 'SKU002_1.jpg'],
-      ['21', 'Fashion Redemption', 'Urban Sneakers',       'Casual everyday sneakers', 'SKU003', '15000', '35000', '5',  '42', 'Red',   'SKU003_1.jpg'],
-    ];
+  const headers = [
+    'category_id', 'brand name', 'product name', 'description',
+    'sku', 'cost_price', 'selling_price', 'size', 'colour', 'quantity', 'image'
+  ];
 
-    const csvRows = [headers, ...examples].map(row => 
-      row.map(cell => `"${cell}"`).join(',')
-    ).join('\n');
+  const examples = [
+    // Scenario A: Size only — same SKU repeated per size, colour left empty
+    ['10', 'Fashion Redemption', 'Elegant Black Dress',  'A beautiful formal dress', 'SKU001', '12000', '25000', 'S',  '',      '5',  'SKU001_1.jpg'],
+    ['10', 'Fashion Redemption', 'Elegant Black Dress',  'A beautiful formal dress', 'SKU001', '12000', '25000', 'M',  '',      '10', 'SKU001_1.jpg'],
+    ['10', 'Fashion Redemption', 'Elegant Black Dress',  'A beautiful formal dress', 'SKU001', '12000', '25000', 'L',  '',      '8',  'SKU001_1.jpg'],
+    ['10', 'Fashion Redemption', 'Elegant Black Dress',  'A beautiful formal dress', 'SKU001', '12000', '25000', 'XL', '',      '3',  'SKU001_1.jpg'],
+    // Scenario B: Colour + Size — same SKU repeated per colour and size combination
+    ['1',  'Fashion Redemption', 'Classic Cotton Shirt', 'Premium cotton shirt',     'SKU002', '8000',  '18000', 'S',  'White', '5',  'SKU002_1.jpg'],
+    ['1',  'Fashion Redemption', 'Classic Cotton Shirt', 'Premium cotton shirt',     'SKU002', '8000',  '18000', 'M',  'White', '8',  'SKU002_1.jpg'],
+    ['1',  'Fashion Redemption', 'Classic Cotton Shirt', 'Premium cotton shirt',     'SKU002', '8000',  '18000', 'L',  'White', '4',  'SKU002_1.jpg'],
+    ['1',  'Fashion Redemption', 'Classic Cotton Shirt', 'Premium cotton shirt',     'SKU002', '8000',  '18000', 'S',  'Black', '6',  'SKU002_1.jpg'],
+    ['1',  'Fashion Redemption', 'Classic Cotton Shirt', 'Premium cotton shirt',     'SKU002', '8000',  '18000', 'M',  'Black', '9',  'SKU002_1.jpg'],
+    ['1',  'Fashion Redemption', 'Classic Cotton Shirt', 'Premium cotton shirt',     'SKU002', '8000',  '18000', 'L',  'Black', '3',  'SKU002_1.jpg'],
+    // Scenario C: Footwear with numeric sizes
+    ['21', 'Fashion Redemption', 'Urban Sneakers',       'Casual everyday sneakers', 'SKU003', '15000', '35000', '40', 'Red',   '5',  'SKU003_1.jpg'],
+    ['21', 'Fashion Redemption', 'Urban Sneakers',       'Casual everyday sneakers', 'SKU003', '15000', '35000', '41', 'Red',   '7',  'SKU003_1.jpg'],
+    ['21', 'Fashion Redemption', 'Urban Sneakers',       'Casual everyday sneakers', 'SKU003', '15000', '35000', '42', 'Red',   '4',  'SKU003_1.jpg'],
+  ];
 
-    const blob = new Blob([csvRows], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = 'fashion_redemption_bulk_template.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const commentRows = [
+    '# INSTRUCTIONS:',
+    '# - Each row = one size/colour variant of a product',
+    '# - Repeat the same SKU on multiple rows to add more sizes or colours',
+    '# - Leave the colour column empty if your product has no colour variation',
+    '# - Name images after SKU e.g. SKU001_1.jpg  SKU001_2.jpg',
+    '# - Delete these comment rows before uploading',
+    '#',
+  ].map(c => `"${c}"`);
+
+  const csvRows = [
+    ...commentRows,
+    headers.map(h => `"${h}"`).join(','),
+    ...examples.map(row => row.map(cell => `"${cell}"`).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvRows], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'fashion_redemption_bulk_template.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
   const reset = () => { setFile(null); setImages([]); setStatus('idle'); setResult(null); };
   const handleClose = () => { reset(); onClose(); };
@@ -273,6 +298,10 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onSu
                   </p>
                 </div>
               </button>
+              <p className="text-[10px] text-gray-400">
+                Includes examples for size-only, colour+size, and footwear products.
+                Repeat the same SKU per row for each size/colour variant.
+              </p>
 
               {/* ── Upload Zones ──────────────────────────────────────────────── */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
