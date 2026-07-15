@@ -2,7 +2,7 @@ import React from 'react';
 import { Pencil, Trash2, Eye } from 'lucide-react';
 
 export interface Column<T> {
-  header: string;
+  header: React.ReactNode;
   accessorKey?: keyof T;
   cell?: (row: T) => React.ReactNode;
   align?: 'left' | 'center' | 'right';

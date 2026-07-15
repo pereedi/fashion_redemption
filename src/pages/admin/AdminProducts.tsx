@@ -5,24 +5,24 @@ import { useAuth } from '../../context/AuthContext';
 import { DataTable, type Column } from '../../components/admin/shared/DataTable';
 import { DynamicForm, type FormField } from '../../components/admin/shared/DynamicForm';
 import VariantEditor, { type Variant } from '../../components/admin/ProductEditor/VariantEditor';
-import { Plus, X, Upload } from 'lucide-react';
+import { Plus, X, Upload, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORY_MAP, ALL_CATEGORIES } from '../../config/categoryMapping';
 import API_BASE_URL from '../../config/api';
 import BulkUploadModal from '../../components/admin/BulkUpload/BulkUploadModal';
-
 
 const AdminProducts = () => {
   const { token } = useAuth();
   const [searchParams] = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Form Extension State
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -51,7 +51,6 @@ const AdminProducts = () => {
 
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
 
-  // Sync with URL query parameter
   useEffect(() => {
     const q = searchParams.get('q') || '';
     setSearchQuery(q);
@@ -60,8 +59,8 @@ const AdminProducts = () => {
   const filteredProducts = useMemo(() => {
     if (!searchQuery) return products;
     const lowerQuery = searchQuery.toLowerCase();
-    return products.filter(p => 
-      p.name.toLowerCase().includes(lowerQuery) || 
+    return products.filter(p =>
+      p.name.toLowerCase().includes(lowerQuery) ||
       p.id?.toString().toLowerCase().includes(lowerQuery) ||
       p.category?.toLowerCase().includes(lowerQuery)
     );
@@ -69,9 +68,7 @@ const AdminProducts = () => {
 
   const handleDelete = async (row: any) => {
     if (!window.confirm(`Are you sure you want to delete ${row.name}?`)) return;
-    
     try {
-      // Use id (external_id) for deletion as per repository
       const res = await apiFetch(`${API_BASE_URL}/api/admin/products/${row.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -86,9 +83,37 @@ const AdminProducts = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.size} products? This cannot be undone.`)) return;
+
+    setLoading(true);
+    let deleted = 0;
+    let failed = 0;
+
+    try {
+      for (const id of selectedIds) {
+        try {
+          const res = await apiFetch(`${API_BASE_URL}/api/admin/products/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) deleted++;
+          else failed++;
+        } catch {
+          failed++;
+        }
+      }
+      setSelectedIds(new Set());
+      await fetchProducts();
+      if (failed > 0) alert(`${deleted} deleted, ${failed} failed.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleImportSamples = async () => {
     if (!window.confirm('This will import the sample product catalog into your database. Continue?')) return;
-    
     setLoading(true);
     try {
       const res = await apiFetch(`${API_BASE_URL}/api/seed-products`, {
@@ -125,29 +150,20 @@ const AdminProducts = () => {
   const handleSubmit = async (formData: any) => {
     setIsSubmitting(true);
     try {
-      const url = editingProduct 
+      const url = editingProduct
         ? `${API_BASE_URL}/api/admin/products/${editingProduct.id}`
         : `${API_BASE_URL}/api/admin/products`;
-      
+
       const method = editingProduct ? 'PUT' : 'POST';
-      
-      // Combine form data with managed variants
+
       const finalData = {
         ...formData,
         variants: variants
       };
 
-      console.log(`[DEBUG] Submitting to ${url}`);
-      console.log(`[DEBUG] Final Data Structure:`, { 
-        name: finalData.name, 
-        imageCount: finalData.images?.length,
-        variantCount: finalData.variants?.length,
-        payloadLength: JSON.stringify(finalData).length 
-      });
-
       const res = await apiFetch(url, {
         method,
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -160,15 +176,12 @@ const AdminProducts = () => {
       } else {
         let errorMessage = 'Failed to save product';
         const contentType = res.headers.get('content-type');
-        
         if (contentType && contentType.includes('application/json')) {
           const errorData = await res.json();
           errorMessage = errorData.message || errorMessage;
         } else {
-          // If not JSON, it might be a "Payload Too Large" HTML page
           errorMessage = `Server Error (${res.status}): The image might be too large or the server is busy.`;
         }
-        
         alert(`Error: ${errorMessage}`);
       }
     } catch (error) {
@@ -180,6 +193,38 @@ const AdminProducts = () => {
   };
 
   const columns: Column<any>[] = [
+    {
+      header: (
+        <input
+          type="checkbox"
+          className="w-4 h-4 rounded border-gray-300 text-luxury-red focus:ring-luxury-red cursor-pointer"
+          checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedIds(new Set(filteredProducts.map(p => p.id)));
+            } else {
+              setSelectedIds(new Set());
+            }
+          }}
+        />
+      ),
+      cell: (row: any) => (
+        <input
+          type="checkbox"
+          className="w-4 h-4 rounded border-gray-300 text-luxury-red focus:ring-luxury-red cursor-pointer"
+          checked={selectedIds.has(row.id)}
+          onChange={(e) => {
+            setSelectedIds(prev => {
+              const next = new Set(prev);
+              if (e.target.checked) next.add(row.id);
+              else next.delete(row.id);
+              return next;
+            });
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+      )
+    },
     {
       header: 'Image',
       cell: (row: any) => (
@@ -193,24 +238,27 @@ const AdminProducts = () => {
     { header: 'ID', accessorKey: 'id' },
     { header: 'SKU', accessorKey: 'sku' },
     { header: 'Name', accessorKey: 'name' },
-    { 
-      header: 'Category', 
+    {
+      header: 'Category',
       cell: (row: any) => (
         <div className="flex flex-col">
           <span className="capitalize font-medium text-xs">{row.category}</span>
           <span className="text-[10px] text-gray-500 uppercase tracking-tighter">{row.type}</span>
         </div>
-      ) 
+      )
     },
-    { header: 'Price', cell: (row: any) => <span className="font-bold text-xs">Esp {Number(row.basePrice).toLocaleString()}</span> },
-    { 
-      header: 'Stock Status', 
+    {
+      header: 'Price',
+      cell: (row: any) => <span className="font-bold text-xs">Esp {Number(row.basePrice).toLocaleString()}</span>
+    },
+    {
+      header: 'Stock Status',
       cell: (row: any) => {
         const totalStock = row.variants?.reduce((acc: number, v: any) => acc + (v.stock || 0), 0) || row.stock || 0;
         return (
           <div className="flex flex-col gap-1.5 py-1">
             <span className={`px-2 py-0.5 text-[10px] font-bold rounded w-fit ${
-              totalStock === 0 ? 'bg-red-100 text-luxury-red' : 
+              totalStock === 0 ? 'bg-red-100 text-luxury-red' :
               totalStock < 10 ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
             }`}>
               {totalStock} TOTAL
@@ -218,10 +266,12 @@ const AdminProducts = () => {
             <div className="flex flex-wrap gap-1 max-w-[200px]">
               {row.variants?.slice(0, 6).map((v: any, i: number) => (
                 <span key={i} className="text-[8px] bg-white border border-gray-100 px-1.5 py-0.5 rounded text-gray-500 font-medium">
-                  {v.color ? `${v.color.slice(0,3)}/` : ''}{v.size}: {v.stock}
+                  {v.color ? `${v.color.slice(0, 3)}/` : ''}{v.size}: {v.stock}
                 </span>
               ))}
-              {(row.variants?.length || 0) > 6 && <span className="text-[8px] text-gray-400">+{row.variants.length - 6} more</span>}
+              {(row.variants?.length || 0) > 6 && (
+                <span className="text-[8px] text-gray-400">+{row.variants.length - 6} more</span>
+              )}
             </div>
           </div>
         );
@@ -235,48 +285,33 @@ const AdminProducts = () => {
   ];
 
   const formFields: FormField[] = useMemo(() => [
-  { name: 'basic_info', label: 'Product Basics', type: 'section' },
-  { name: 'sku', label: 'SKU', type: 'text', required: true, minLength: 3, maxLength: 50 },
-  { name: 'name', label: 'Name', type: 'text', required: true, minLength: 3, maxLength: 100 },
-  { name: 'description', label: 'Description', type: 'textarea', required: true, minLength: 10, maxLength: 1000 },
-  
-  { name: 'classification', label: 'Categorization', type: 'section' },
-  { name: 'category', label: 'Main Category', type: 'select', required: true, options: ALL_CATEGORIES },
-  { 
-    name: 'type', label: 'Sub-Category / Type', type: 'select', required: true,
-    options: selectedCategory ? CATEGORY_MAP[selectedCategory]?.types || [] : []
-  },
+    { name: 'basic_info', label: 'Product Basics', type: 'section' },
+    { name: 'sku', label: 'SKU', type: 'text', required: true, minLength: 3, maxLength: 50 },
+    { name: 'name', label: 'Name', type: 'text', required: true, minLength: 3, maxLength: 100 },
+    { name: 'description', label: 'Description', type: 'textarea', required: true, minLength: 10, maxLength: 1000 },
 
-  { name: 'pricing_media', label: 'Pricing & Images', type: 'section' },
-  { name: 'basePrice', label: 'Price (Esp)', type: 'number', required: true, min: 1, prefix: 'Esp' },
-  { name: 'images', label: 'Images', type: 'file', multiple: true, required: !editingProduct }
-], [selectedCategory, editingProduct]);
+    { name: 'classification', label: 'Categorization', type: 'section' },
+    { name: 'category', label: 'Main Category', type: 'select', required: true, options: ALL_CATEGORIES },
+    {
+      name: 'type', label: 'Sub-Category / Type', type: 'select', required: true,
+      options: selectedCategory ? CATEGORY_MAP[selectedCategory]?.types || [] : []
+    },
 
-const validateVariants = (): string | null => {
-  if (variants.length === 0) return null;
+    { name: 'pricing_media', label: 'Pricing & Images', type: 'section' },
+    { name: 'basePrice', label: 'Price (Esp)', type: 'number', required: true, min: 1, prefix: 'Esp' },
+    { name: 'images', label: 'Images', type: 'file', multiple: true, required: !editingProduct }
+  ], [selectedCategory, editingProduct]);
 
-  for (let i = 0; i < variants.length; i++) {
-    const v = variants[i];
-
-    if (!v.size || v.size.trim() === '') {
-      return `Variant ${i + 1} is missing a size`;
+  const validateVariants = (): string | null => {
+    if (variants.length === 0) return null;
+    for (let i = 0; i < variants.length; i++) {
+      const v = variants[i];
+      if (!v.size || v.size.trim() === '') return `Variant ${i + 1} is missing a size`;
+      if (v.stock === undefined || v.stock === null || isNaN(Number(v.stock))) return `Variant ${i + 1} is missing a stock value`;
+      if (Number(v.stock) < 0) return `Variant ${i + 1} stock cannot be negative`;
     }
-
-    if (
-      v.stock === undefined ||
-      v.stock === null ||
-      isNaN(Number(v.stock))
-    ) {
-      return `Variant ${i + 1} is missing a stock value`;
-    }
-
-    if (Number(v.stock) < 0) {
-      return `Variant ${i + 1} stock cannot be negative`;
-    }
-  }
-
-  return null;
-};
+    return null;
+  };
 
   if (loading) return (
     <div className="flex justify-center items-center h-64">
@@ -285,17 +320,18 @@ const validateVariants = (): string | null => {
   );
 
   return (
-    <div className="space-y-10 animate-fade-in min-h-screen bg-[#F5F5F5] -m-8 p-8">
+    <div className="space-y-6 animate-fade-in min-h-screen bg-[#F5F5F5] -m-8 p-8">
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="flex-1">
           <h1 className="text-2xl font-serif font-bold tracking-tight uppercase">Products</h1>
           <p className="text-sm text-gray-500">Manage your store's inventory and catalog.</p>
         </div>
-        
+
         <div className="flex flex-wrap gap-4 items-center">
-          {/* Search Bar */}
           <div className="relative w-full sm:w-64">
-            <input 
+            <input
               type="text"
               placeholder="Search products..."
               value={searchQuery}
@@ -305,46 +341,69 @@ const validateVariants = (): string | null => {
           </div>
 
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={handleImportSamples}
               className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-md hover:border-black hover:text-black transition-all text-sm font-medium shadow-sm"
             >
               Restore Samples
             </button>
-            <button 
+            <button
+              onClick={() => setIsBulkModalOpen(true)}
+              className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-md hover:border-luxury-red hover:text-luxury-red transition-all text-sm font-medium shadow-sm"
+            >
+              <Upload size={16} /> Bulk Upload
+            </button>
+            <button
               onClick={handleAdd}
               className="flex items-center justify-center gap-2 bg-luxury-red text-white px-4 py-2 rounded-md hover:bg-black transition-colors text-sm font-medium shadow-sm"
             >
               <Plus size={16} /> Add Product
             </button>
-            <button
-             onClick={() => setIsBulkModalOpen(true)}
-             className="flex items-center justify-center gap-2 bg-white border border-gray-200            text-gray-600 px-4 py-2 rounded-md hover:border-luxury-red hover:text-luxury-red transition-all text-sm font-medium shadow-sm"
->
-             <Upload size={16} /> Bulk Upload
-           </button>
-
           </div>
         </div>
       </div>
 
-      <DataTable 
-        data={filteredProducts} 
-        columns={columns} 
-        actions={actions} 
-        keyExtractor={(row) => row.id} 
+      {/* ── Bulk Action Bar ─────────────────────────────────────────────────── */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between px-5 py-3 bg-luxury-red/5 border border-luxury-red/20 rounded-xl">
+          <span className="text-sm font-bold text-luxury-red">
+            {selectedIds.size} product{selectedIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="text-xs font-bold text-gray-400 uppercase tracking-wider hover:text-black transition-colors"
+            >
+              Clear selection
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-2 px-5 py-2 bg-luxury-red text-white text-xs font-bold tracking-wider uppercase rounded-lg hover:bg-black transition-all"
+            >
+              <Trash2 size={14} /> Delete {selectedIds.size} Products
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Table ───────────────────────────────────────────────────────────── */}
+      <DataTable
+        data={filteredProducts}
+        columns={columns}
+        actions={actions}
+        keyExtractor={(row) => row.id}
       />
 
-      {/* Modal */}
+      {/* ── Add / Edit Modal ────────────────────────────────────────────────── */}
       <AnimatePresence>
         {isModalOpen && (
           <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="product-modal-title"
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-start justify-center       p-4 overflow-y-auto pt-24 pb-12"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="product-modal-title"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-start justify-center p-4 overflow-y-auto pt-24 pb-12"
           >
-          <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 50 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 50 }}
@@ -353,51 +412,53 @@ const validateVariants = (): string | null => {
             >
               <div className="flex items-center justify-between p-8 border-b border-gray-100">
                 <h2 id="product-modal-title" className="text-2xl font-serif font-bold tracking-tight uppercase">
-                    {editingProduct ? 'Edit Product' : 'Add New Product'}
+                  {editingProduct ? 'Edit Product' : 'Add New Product'}
                 </h2>
-                <button 
+                <button
                   onClick={() => setIsModalOpen(false)}
                   className="text-gray-400 hover:text-black transition-colors p-2 hover:bg-gray-50 rounded-full"
                 >
                   <X size={24} />
                 </button>
               </div>
-              
+
               <div className="px-10 py-12 flex-1 scrollbar-hide">
                 <div className="mb-10">
-                  <DynamicForm 
-  fields={formFields} 
-  initialData={editingProduct ? {
-    ...editingProduct,
-    basePrice: editingProduct.basePrice || editingProduct.base_price
-  } : { category: selectedCategory }}
-  onChange={(data) => {
-    if (data.category !== selectedCategory) {
-      setSelectedCategory(data.category);
-    }
-  }}
-  onSubmit={handleSubmit}
-  onCancel={() => setIsModalOpen(false)}
-  submitLabel={editingProduct ? 'Update Product' : 'Create Product'}
-  isLoading={isSubmitting}
-  onValidateExtension={validateVariants}
-  extension={
-    <div className="mt-12">
-      <VariantEditor variants={variants} onChange={setVariants} />
-    </div>
-  }
-/>
+                  <DynamicForm
+                    fields={formFields}
+                    initialData={editingProduct ? {
+                      ...editingProduct,
+                      basePrice: editingProduct.basePrice || editingProduct.base_price
+                    } : { category: selectedCategory }}
+                    onChange={(data) => {
+                      if (data.category !== selectedCategory) {
+                        setSelectedCategory(data.category);
+                      }
+                    }}
+                    onSubmit={handleSubmit}
+                    onCancel={() => setIsModalOpen(false)}
+                    submitLabel={editingProduct ? 'Update Product' : 'Create Product'}
+                    isLoading={isSubmitting}
+                    onValidateExtension={validateVariants}
+                    extension={
+                      <div className="mt-12">
+                        <VariantEditor variants={variants} onChange={setVariants} />
+                      </div>
+                    }
+                  />
                 </div>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
+      {/* ── Bulk Upload Modal ───────────────────────────────────────────────── */}
       <BulkUploadModal
-  isOpen={isBulkModalOpen}
-  onClose={() => setIsBulkModalOpen(false)}
-  onSuccess={() => { setIsBulkModalOpen(false); fetchProducts(); }}
-/>
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        onSuccess={() => { setIsBulkModalOpen(false); fetchProducts(); }}
+      />
     </div>
   );
 };
