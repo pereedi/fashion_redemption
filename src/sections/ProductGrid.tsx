@@ -4,6 +4,22 @@ import ProductCard from '../components/ui/ProductCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import API_BASE_URL from '../config/api';
 
+type PageItem = number | '…';
+
+function getPageItems(totalPages: number, current: number): PageItem[] {
+    if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const items: PageItem[] = [1];
+    const start = Math.max(2, current - 1);
+    const end = Math.min(totalPages - 1, current + 1);
+    if (start > 2) items.push('…');
+    for (let i = start; i <= end; i++) items.push(i);
+    if (end < totalPages - 1) items.push('…');
+    items.push(totalPages);
+    return items;
+}
+
 interface ProductGridProps {
     category?: string;
     filters?: any;
@@ -113,19 +129,28 @@ const ProductGrid: React.FC<ProductGridProps> = ({ category, filters, onPageChan
                         <ChevronLeft size={16} />
                     </button>
                     
-                    {[...Array(pagination.pages)].map((_, i) => (
-                        <button
-                            key={i + 1}
-                            onClick={() => onPageChange?.(i + 1)}
-                            className={`w-10 h-10 flex items-center justify-center text-xs font-bold transition-all ${
-                                pagination.currentPage === i + 1
-                                    ? 'bg-luxury-red text-white'
-                                    : 'bg-white border border-light-gray text-black/60 hover:border-black'
-                            }`}
-                        >
-                            {i + 1}
-                        </button>
-                    ))}
+                    {getPageItems(pagination.pages, pagination.currentPage).map((item, idx) =>
+                        item === '…' ? (
+                            <span
+                                key={`gap-${idx}`}
+                                className="w-10 h-10 flex items-center justify-center text-xs text-black/30"
+                            >
+                                …
+                            </span>
+                        ) : (
+                            <button
+                                key={item}
+                                onClick={() => onPageChange?.(item)}
+                                className={`w-10 h-10 flex items-center justify-center text-xs font-bold transition-all ${
+                                    pagination.currentPage === item
+                                        ? 'bg-luxury-red text-white'
+                                        : 'bg-white border border-light-gray text-black/60 hover:border-black'
+                                }`}
+                            >
+                                {item}
+                            </button>
+                        )
+                    )}
 
                     <button 
                         onClick={() => onPageChange?.(pagination.currentPage + 1)}
