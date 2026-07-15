@@ -39,8 +39,8 @@ const CheckoutPage: React.FC = () => {
 
   const currentShipping = shippingMethods.find(m => m.id === selectedShipping);
   const tax = totalSubtotal * 0.08;
-  const discount = 15.00;
-  const total = totalSubtotal + (currentShipping?.price || 0) + tax - discount;
+  const discount = 0; // No discount applied unless a promo code is used
+  const total = totalSubtotal + (currentShipping?.price || 0) + tax;
 
   const { token, isAuthenticated } = useAuth();
 
@@ -93,12 +93,14 @@ const CheckoutPage: React.FC = () => {
           postalCode: formData.postalCode
         },
         items: cartItems.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          size: item.size,
-          image: item.image
+        id: item.id,
+        name: item.name,
+        price: item.basePrice,    // ← send the number, not the formatted string
+        basePrice: item.basePrice,
+        quantity: item.quantity,
+        size: item.size,
+        color: item.color,
+        image: item.image
         })),
         shipping: {
           method: currentShipping?.name || '',

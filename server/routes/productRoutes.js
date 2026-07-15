@@ -93,10 +93,14 @@ function parseMessage(message = '') {
 function toPublicProduct(p, detail = false) {
   const id = p.id || p.external_id;
   const frontendUrl = process.env.FRONTEND_URL || 'https://fashion-redemption.vercel.app';
+  const numericPrice = Number(p.basePrice ?? p.base_price ?? 0);
+
   const base = {
     id,
     name: p.name,
-    price: Number(p.basePrice ?? p.base_price ?? 0),
+    price: `Esp ${numericPrice.toLocaleString()}`,   // ← formatted string for display
+    basePrice: numericPrice,                          // ← number for cart calculations
+    base_price: numericPrice,                         // ← alias so ProductDetailsPage works
     currency: 'ESP',
     category: p.category || '',
     rating: Number(p.rating ?? 0),
@@ -111,7 +115,12 @@ function toPublicProduct(p, detail = false) {
       description: p.description || '',
       images: p.images || [],
       sizes: p.sizes || [],
-      colors: p.colors || []
+      colors: p.colors || [],
+      variants: p.variants || [],
+      reviews: p.reviews || [],
+      relatedProducts: p.relatedProducts || [],
+      stock: p.stock ?? 0,
+      review_count: p.review_count ?? p.reviewCount ?? 0,
     };
   }
 
