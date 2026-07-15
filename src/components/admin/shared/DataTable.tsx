@@ -1,5 +1,5 @@
-import React from 'react';
-import { Pencil, Trash2, Eye } from 'lucide-react';
+import React, { useState } from 'react';
+import { Pencil, Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface Column<T> {
   header: React.ReactNode;
@@ -21,6 +21,7 @@ interface DataTableProps<T> {
   actions?: Action<T>[];
   keyExtractor: (row: T) => string;
   emptyMessage?: string;
+  pageSize?: number;
 }
 
 export function DataTable<T>({ 
@@ -28,8 +29,16 @@ export function DataTable<T>({
   columns, 
   actions, 
   keyExtractor, 
-  emptyMessage = "No records found." 
+  emptyMessage = "No records found.",
+  pageSize
 }: DataTableProps<T>) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = pageSize ? Math.max(1, Math.ceil(data.length / pageSize)) : 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedData = pageSize
+    ? data.slice((safePage - 1) * pageSize, safePage * pageSize)
+    : data;
 
   const renderActionIcon = (action: Action<T>, row: T) => {
     const baseClasses = "p-1.5 rounded-md transition-colors";
@@ -106,8 +115,8 @@ export function DataTable<T>({
                   {emptyMessage}
                 </td>
               </tr>
-            ) : (
-              data.map((row) => (
+             ) : (
+               pagedData.map((row) => (
                 <tr key={keyExtractor(row)} className="hover:bg-gray-50/80 transition-colors group">
                   {columns.map((col, colIndex) => (
                     <td 
@@ -133,6 +142,37 @@ export function DataTable<T>({
           </tbody>
         </table>
       </div>
+      {pageSize && totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 py-5 border-t border-gray-100">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={safePage === 1}
+            className="p-2 border border-gray-200 hover:border-black transition-colors text-gray-400 hover:text-black disabled:opacity-20"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i + 1}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`w-9 h-9 flex items-center justify-center text-xs font-bold transition-all ${
+                safePage === i + 1
+                  ? 'bg-luxury-red text-white'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:border-black'
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={safePage === totalPages}
+            className="p-2 border border-gray-200 hover:border-black transition-colors text-gray-400 hover:text-black disabled:opacity-20"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

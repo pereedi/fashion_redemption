@@ -178,7 +178,7 @@ class ProductRepository {
       }
 
       if (filters.filter === 'new') {
-        query = query.orderBy('products.created_at', 'desc').limit(12);
+        query = query.orderBy('products.created_at', 'desc');
       }
 
       if (filters.filter === 'trending') {
@@ -322,7 +322,7 @@ class ProductRepository {
       }
 
       if (filters.filter === 'new') {
-        scope.orderBy('products.created_at', 'desc').limit(12);
+        scope.orderBy('products.created_at', 'desc');
       } else if (filters.filter === 'trending') {
         scope.whereRaw('LOWER(category) = ?', ['women']);
       }

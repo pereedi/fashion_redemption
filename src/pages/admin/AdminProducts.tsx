@@ -392,6 +392,7 @@ const AdminProducts = () => {
         columns={columns}
         actions={actions}
         keyExtractor={(row) => row.id}
+        pageSize={10}
       />
 
       {/* ── Add / Edit Modal ────────────────────────────────────────────────── */}

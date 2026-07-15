@@ -164,13 +164,16 @@ router.get('/', async (req, res) => {
       limit: parseInt(limit)
     });
 
+    const parsedLimit = parseInt(limit);
     res.json({
       success: true,
       data: products.map(p => toPublicProduct(p)),
       pagination: {
         page: parseInt(page),
-        limit: parseInt(limit),
-        total
+        currentPage: parseInt(page),
+        limit: parsedLimit,
+        total,
+        pages: Math.ceil(total / parsedLimit)
       }
     });
   } catch (err) {
