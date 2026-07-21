@@ -38,6 +38,15 @@ class UserRepository {
     }
   }
 
+  async findByKingsChatId(kingsChatId) {
+    try {
+      return await db('users').where('kingschat_id', kingsChatId).first();
+    } catch (err) {
+      logger.error('Error in UserRepository.findByKingsChatId', { error: err.message, kingsChatId });
+      return null;
+    }
+  }
+
   async findById(id) {
     try {
       const user = await db('users').where('id', id).first();
@@ -107,6 +116,16 @@ class UserRepository {
       return users;
     } catch (err) {
       logger.error('Error in UserRepository.getAll', { error: err.message });
+      throw err;
+    }
+  }
+
+  async update(id, data) {
+    try {
+      await db('users').where('id', id).update(data);
+      return this.findById(id);
+    } catch (err) {
+      logger.error('Error in UserRepository.update', { error: err.message, id, data });
       throw err;
     }
   }

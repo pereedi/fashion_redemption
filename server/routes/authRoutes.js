@@ -238,4 +238,94 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// POST /api/auth/kingschat
+router.post('/kingschat', async (req, res) => {
+  try {
+    const { accessToken } = req.body;
+
+    if (!accessToken) {
+      return res.status(400).json({ message: 'Access token is required' });
+    }
+
+    // Fetch user profile from KingsChat API
+    let kingsChatUser = null;
+    try {
+      const profileResponse = await fetch('https://connect.kingsch.at/developer/api/users/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      if (!profileResponse.ok) {
+        const errText = await profileResponse.text();
+        console.error('KingsChat profile fetch failed:', profileResponse.status, errText);
+        return res.status(401).json({ message: 'Failed to verify KingsChat credentials' });
+      }
+
+      const profileData = await profileResponse.json();
+      kingsChatUser = profileData.profile || profileData.user || profileData.data || profileData;
+    } catch (fetchErr) {
+      console.error('Error contacting KingsChat API:', fetchErr);
+      return res.status(500).json({ message: 'Error communicating with KingsChat API' });
+    }
+
+    const kingsChatId = kingsChatUser.id || kingsChatUser.user_id || kingsChatUser.userId;
+    if (!kingsChatId) {
+      return res.status(400).json({ message: 'Invalid KingsChat user profile received' });
+    }
+
+    const name = kingsChatUser.name || kingsChatUser.username || `KingsChat User ${kingsChatId}`;
+    const email = kingsChatUser.email || `${kingsChatUser.username || kingsChatId}@kingschat.user`;
+
+    // 1. Check if user exists by kingschat_id
+    let user = await UserRepository.findByKingsChatId(kingsChatId);
+
+    if (!user && email) {
+      // 2. Check if user exists by email
+      user = await UserRepository.findByEmail(email);
+      if (user && !user.kingschat_id) {
+        // Link kingschat_id to existing user
+        await UserRepository.update(user.id, { kingschat_id: kingsChatId });
+        user.kingschat_id = kingsChatId;
+      }
+    }
+
+    if (!user) {
+      // 3. Create new user record
+      const userId = await UserRepository.create({
+        name,
+        email,
+        kingschat_id: kingsChatId,
+        password: null,
+        role: 'customer'
+      });
+      user = await UserRepository.findById(userId);
+    } else {
+      user = await UserRepository.findById(user.id);
+    }
+
+    const token = signToken(user.id);
+
+    res.status(200).json({
+      status: 'success',
+      token,
+      data: {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          address: user.address,
+          city: user.city,
+          postalCode: user.postal_code,
+          wishlist: user.wishlist || []
+        }
+      }
+    });
+  } catch (err) {
+    console.error('KingsChat auth route error:', err);
+    res.status(500).json({ message: err.message || 'KingsChat login failed' });
+  }
+});
+
 export default router;

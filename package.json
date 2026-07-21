@@ -22,6 +22,7 @@
     "express": "^5.2.1",
     "framer-motion": "^12.35.2",
     "jsonwebtoken": "^9.0.3",
+    "kingschat-web-sdk": "^0.1.0",
     "knex": "^3.1.0",
     "lucide-react": "^0.577.0",
     "mongoose": "^9.3.0",

@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/layout/Navbar';
 import logo from '../assets/logo.png';
 import API_BASE_URL from '../config/api';
+import KingsChatButton from '../components/auth/KingsChatButton';
 
 
 const SignupPage: React.FC = () => {
@@ -60,6 +61,11 @@ const SignupPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleKingsChatSuccess = (user: any, token: string) => {
+    login(user, token);
+    navigate('/sales');
   };
 
   return (
@@ -147,6 +153,17 @@ const SignupPage: React.FC = () => {
             >
               {isLoading ? 'CREATING ACCOUNT...' : 'REGISTER'}
             </button>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-black/10"></div>
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
+                <span className="bg-white px-4 text-black/40">Or continue with</span>
+              </div>
+            </div>
+
+            <KingsChatButton onSuccess={handleKingsChatSuccess} onError={setError} text="Sign up with KingsChat" />
           </form>
 
           <div className="text-center pt-8 border-t border-black/5">
