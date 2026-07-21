@@ -88,7 +88,17 @@ const ProfilePage: React.FC = () => {
                     className="space-y-12 animate-fade-in"
                   >
                     <section className="space-y-8">
-                      <h2 className="text-xl font-serif uppercase tracking-tight border-b border-black/5 pb-4">Personal Information</h2>
+                      <div className="flex items-center justify-between border-b border-black/5 pb-4">
+                        <h2 className="text-xl font-serif uppercase tracking-tight">Personal Information</h2>
+                        {user?.kingschat_id && (
+                          <span className="inline-flex items-center space-x-1.5 px-3 py-1 bg-[#2B82C9]/10 text-[#2B82C9] rounded-full text-[10px] font-bold tracking-wider uppercase border border-[#2B82C9]/20">
+                            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.982-1.39A9.954 9.954 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm1 14.5h-2v-2h2v2zm0-4h-2V7h2v5.5z"/>
+                            </svg>
+                            <span>KingsChat Connected</span>
+                          </span>
+                        )}
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold tracking-widest text-black/40 uppercase">Full Name</label>
@@ -98,6 +108,12 @@ const ProfilePage: React.FC = () => {
                           <label className="text-[10px] font-bold tracking-widest text-black/40 uppercase">Email Address</label>
                           <p className="text-sm font-medium">{user?.email}</p>
                         </div>
+                        {user?.kingschat_id && (
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold tracking-widest text-black/40 uppercase">KingsChat User ID</label>
+                            <p className="text-sm font-medium text-[#2B82C9]">{user?.kingschat_id}</p>
+                          </div>
+                        )}
                       </div>
                     </section>
                   </motion.div>

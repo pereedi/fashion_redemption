@@ -5,6 +5,10 @@ interface User {
   name: string;
   email: string;
   role: string;
+  kingschat_id?: string;
+  address?: string;
+  city?: string;
+  postalCode?: string;
   wishlist: string[];
 }
 
