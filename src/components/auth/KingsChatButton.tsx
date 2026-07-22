@@ -70,14 +70,10 @@ const KingsChatButton: React.FC<KingsChatButtonProps> = ({
 
     setIsLoading(true);
 
-    // The redirect_url MUST be registered exactly in the KingsChat developer portal.
-    // We use the server-side redirect endpoint which receives the POST from KingsChat
-    // and then redirects the popup browser to /kingschat-callback on our frontend.
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const serverRedirectUrl = `${API_BASE}/api/auth/kingschat/redirect`;
-
     // Pass our frontend callback page as the `origin` — KingsChat echoes this back
     // in the POST body, and our server uses it to redirect the popup to the right URL.
+    // The redirect_url registered in the KingsChat developer portal must be:
+    //   https://your-backend-url.com/api/auth/kingschat/redirect
     const frontendCallbackUrl = `${window.location.origin}/kingschat-callback`;
 
     // Build the OAuth2 authorization URL
