@@ -1,6 +1,11 @@
 {
   "rewrites": [
     { "source": "/docs", "destination": "https://fashion-redemption-api.onrender.com/docs" },
+    {
+      "source": "/api/auth/kingschat/redirect",
+      "destination": "https://fashion-redemption-api.onrender.com/api/auth/kingschat/redirect"
+    },
     { "source": "/(.*)", "destination": "/" }
   ]
 }
+

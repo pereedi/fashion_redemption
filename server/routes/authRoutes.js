@@ -350,36 +350,43 @@ router.post('/kingschat', async (req, res) => {
   }
 });
 
-// POST /api/auth/kingschat/redirect
-// This is the endpoint you register as the redirect_url in the KingsChat developer portal.
-// KingsChat will POST { code, origin } to this URL after a successful login.
-// We redirect the popup browser to the frontend callback page with the code in query params.
-router.post('/kingschat/redirect', (req, res) => {
+// GET /api/auth/kingschat/redirect  (browser redirect — KingsChat navigates popup here)
+// POST /api/auth/kingschat/redirect (server POST — KingsChat docs say POST, but browser uses GET)
+// Both are handled identically: extract the code and redirect the popup to our frontend callback page.
+const handleKingsChatRedirect = (req, res) => {
   try {
-    const { code, origin } = req.body;
+    // GET: code is in query string. POST: code is in request body.
+    const code = req.query.code || req.body?.code;
+    const origin = req.query.origin || req.body?.origin;
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
     if (!code) {
-      console.error('KingsChat redirect received no code');
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      return res.redirect(`${frontendUrl}/kingschat-callback?error=no_code`);
+      const errorParam = req.query.error || 'no_code';
+      console.error('KingsChat redirect received no code. Error:', errorParam);
+      return res.redirect(`${frontendUrl}/kingschat-callback?error=${encodeURIComponent(errorParam)}`);
     }
 
-    console.log('KingsChat redirect received code, redirecting to frontend callback...');
+    console.log(`KingsChat redirect (${req.method}): received code, redirecting popup to frontend callback...`);
 
-    // The origin param (if we passed it) contains the frontend callback URL
-    // Otherwise fall back to the configured FRONTEND_URL
-    const frontendCallbackBase = origin || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/kingschat-callback`;
-    const callbackUrl = frontendCallbackBase.includes('?')
-      ? `${frontendCallbackBase}&code=${encodeURIComponent(code)}`
-      : `${frontendCallbackBase}?code=${encodeURIComponent(code)}`;
+    // `origin` will contain our frontend callback URL if we passed it in Step 4.
+    // Fall back to FRONTEND_URL/kingschat-callback if not provided.
+    const callbackBase = (origin && origin.startsWith('http'))
+      ? origin
+      : `${frontendUrl}/kingschat-callback`;
 
-    res.redirect(callbackUrl);
+    const separator = callbackBase.includes('?') ? '&' : '?';
+    res.redirect(`${callbackBase}${separator}code=${encodeURIComponent(code)}`);
   } catch (err) {
     console.error('KingsChat redirect route error:', err);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/kingschat-callback?error=${encodeURIComponent(err.message)}`);
   }
-});
+};
+
+router.get('/kingschat/redirect', handleKingsChatRedirect);
+router.post('/kingschat/redirect', handleKingsChatRedirect);
+
 
 // POST /api/auth/kingschat/callback
 // Receives the authorization code from the OAuth2 popup callback page,
