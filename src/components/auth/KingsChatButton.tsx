@@ -114,6 +114,16 @@ const KingsChatButton: React.FC<KingsChatButtonProps> = ({
         <span>{isLoading ? 'Connecting to KingsChat...' : text}</span>
       </button>
 
+      <div className="text-center mt-3">
+        <button
+          type="button"
+          onClick={() => setShowDemoModal(true)}
+          className="text-[9px] font-bold tracking-widest text-[#2B82C9] hover:text-[#2069A5] uppercase hover:underline transition-all"
+        >
+          Trouble connecting? Use Test Login
+        </button>
+      </div>
+
       {/* Demo / Quick KingsChat Login Modal */}
       {showDemoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
