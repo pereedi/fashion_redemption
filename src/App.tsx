@@ -26,6 +26,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
 import OrderSuccessPage from './pages/OrderSuccessPage';
+import KingsChatCallbackPage from './pages/KingsChatCallbackPage';
 
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
                   <Route path="/search" element={<SearchResultsPage />} />
                   <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
                   <Route path="/payment/verify" element={<PaymentCallbackPage />} />
+                  <Route path="/kingschat-callback" element={<KingsChatCallbackPage />} />
                   <Route path="/order-success" element={<OrderSuccessPage />} /> 
                   <Route
                     path="/checkout"
