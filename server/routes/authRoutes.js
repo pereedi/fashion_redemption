@@ -261,11 +261,12 @@ router.post('/kingschat', async (req, res) => {
     } else {
       // Fetch user profile from KingsChat API
       try {
-        const profileResponse = await fetch('https://connect.kingsch.at/developer/api/users/me', {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        });
+        const profileResponse = await fetch('https://connect.kingsch.at/developer/api/user/profile', {
+        headers: {
+          'api-key': process.env.KINGSCHAT_API_KEY,
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
 
         if (!profileResponse.ok) {
           const errText = await profileResponse.text();
