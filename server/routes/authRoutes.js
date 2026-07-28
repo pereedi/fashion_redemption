@@ -436,9 +436,12 @@ router.post('/kingschat/callback', async (req, res) => {
 
     // Step 2: Fetch user profile using the access_token
     console.log('KingsChat OAuth: Fetching user profile...');
-    const profileResponse = await fetch('https://connect.kingsch.at/developer/api/users/me', {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
+    const profileResponse = await fetch('https://connect.kingsch.at/developer/api/user/profile', {
+  headers: {
+    'api-key': process.env.KINGSCHAT_API_KEY,
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
 
     let kingsChatUser = null;
     if (profileResponse.ok) {
