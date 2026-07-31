@@ -1,18 +1,35 @@
 import duckdb from 'duckdb';
 import db from '../config/db.js';
 import path from 'path';
+import fs from 'fs';
 import { logger } from '../utils/logger.js';
 
-const dbPath = path.join(process.cwd(), 'data', 'analytics.duckdb');
-const duck = new duckdb.Database(dbPath);
+let duck = null;
+try {
+  const dataDir = path.join(process.cwd(), 'data');
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  const dbPath = path.join(dataDir, 'analytics.duckdb');
+  duck = new duckdb.Database(dbPath);
+} catch (err) {
+  logger.error('Failed to initialize DuckDB analytics instance', { error: err.message });
+}
 
 class AnalyticsService {
   constructor() {
-    this.con = duck.connect();
-    this.init();
+    if (duck) {
+      try {
+        this.con = duck.connect();
+        this.init();
+      } catch (err) {
+        logger.error('DuckDB connect failed', { error: err.message });
+      }
+    }
   }
 
   init() {
+    if (!this.con) return;
     this.con.run(`
       CREATE TABLE IF NOT EXISTS sales_data (
         order_id INTEGER,
