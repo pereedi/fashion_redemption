@@ -40,6 +40,12 @@ app.use(express.urlencoded({ limit: '250mb', extended: true }));
 // Added after middleware block
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
+// Serve static frontend build if dist directory exists
+const distPath = path.join(__dirname, '../dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+}
+
 // Request Logger
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
@@ -144,6 +150,16 @@ app.post('/api/seed-products', async (req, res) => {
   }
   
 });
+
+// SPA Catch-all fallback for client-side routing
+if (fs.existsSync(distPath)) {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path === '/health' || req.path === '/docs' || req.path.startsWith('/images')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 // Start Server
 app.listen(PORT, async () => {
