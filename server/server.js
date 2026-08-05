@@ -152,14 +152,16 @@ app.post('/api/seed-products', async (req, res) => {
 });
 
 // SPA Catch-all fallback for client-side routing
-if (fs.existsSync(distPath)) {
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api') || req.path === '/health' || req.path === '/docs' || req.path.startsWith('/images')) {
-      return next();
-    }
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-}
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path === '/health' || req.path === '/docs' || req.path.startsWith('/images')) {
+    return next();
+  }
+  const indexPath = path.join(distPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+  res.status(200).send('<!DOCTYPE html><html><head><title>Fashion Redemption</title></head><body><h1>Fashion Redemption Server is running</h1><p>Frontend dist directory pending upload.</p></body></html>');
+});
 
 // Start Server
 app.listen(PORT, async () => {
