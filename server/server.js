@@ -160,8 +160,8 @@ app.post('/api/seed-products', async (req, res) => {
   
 });
 
-// SPA Catch-all fallback for client-side routing
-app.get('*', (req, res, next) => {
+// SPA Catch-all fallback for client-side routing (Express 5 compatible wildcard)
+app.get('(.*)', (req, res, next) => {
   if (req.path.startsWith('/api') || req.path === '/health' || req.path === '/docs' || req.path.startsWith('/images')) {
     return next();
   }
