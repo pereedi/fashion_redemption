@@ -38,12 +38,12 @@ export default {
   production: {
     ...commonConfig,
     connection: process.env.DATABASE_URL || {
-       host: sanitizeParam(process.env.MYSQL_HOST),
-       port: sanitizeParam(process.env.MYSQL_PORT) || (process.env.MYSQL_HOST?.includes('aivencloud.com') ? 20894 : 3306),
-       user: sanitizeParam(process.env.MYSQL_USER),
-       password: sanitizeParam(process.env.MYSQL_PASSWORD),
-       database: sanitizeParam(process.env.MYSQL_DATABASE),
-       ssl: process.env.MYSQL_SSL === 'true' ? { rejectUnauthorized: false } : (process.env.MYSQL_HOST !== 'localhost' && process.env.MYSQL_HOST !== '127.0.0.1' ? { rejectUnauthorized: false } : false)
+       host: sanitizeParam(process.env.MYSQL_HOST) || 'localhost',
+       port: Number(sanitizeParam(process.env.MYSQL_PORT)) || 3306,
+       user: sanitizeParam(process.env.MYSQL_USER) || 'root',
+       password: sanitizeParam(process.env.MYSQL_PASSWORD) || '',
+       database: sanitizeParam(process.env.MYSQL_DATABASE) || 'fashiondb',
+       ssl: process.env.MYSQL_SSL === 'true' ? { rejectUnauthorized: false } : (process.env.MYSQL_HOST && process.env.MYSQL_HOST !== 'localhost' && process.env.MYSQL_HOST !== '127.0.0.1' ? { rejectUnauthorized: false } : false)
     },
     pool: {
       min: 2,
