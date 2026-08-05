@@ -177,31 +177,33 @@ app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
   console.log('Using MySQL (Transactional) and DuckDB (Analytics)');
   
-  // Run Migrations in Production
-  if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) {
-    try {
-      console.log('--- PRODUCTION DATABASE SYNC ---');
-      console.log('Checking for pending migrations...');
-      const [batchNo, appliedMigrations] = await db.migrate.latest();
-      if (appliedMigrations.length > 0) {
-        console.log(`Success: Applied ${appliedMigrations.length} migrations in batch ${batchNo}`);
-        console.log('Updated tables:', appliedMigrations);
-      } else {
-        console.log('Database is already up to date.');
+  // Asynchronous non-blocking background initialization
+  setTimeout(async () => {
+    // Run Migrations in Production
+    if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) {
+      try {
+        console.log('--- PRODUCTION DATABASE SYNC ---');
+        console.log('Checking for pending migrations...');
+        const [batchNo, appliedMigrations] = await db.migrate.latest();
+        if (appliedMigrations.length > 0) {
+          console.log(`Success: Applied ${appliedMigrations.length} migrations in batch ${batchNo}`);
+          console.log('Updated tables:', appliedMigrations);
+        } else {
+          console.log('Database is already up to date.');
+        }
+        console.log('-------------------------------');
+      } catch (err) {
+        console.error('CRITICAL: Database migration failed on background sync!');
+        console.error('Error details:', err.message);
       }
-      console.log('-------------------------------');
-    } catch (err) {
-      console.error('CRITICAL: Database migration failed on startup!');
-      console.error('Error details:', err.message);
-      // Don't kill the server, but log heavily so user sees it in Render logs
     }
-  }
 
-  // Initialize Analytics
-  try {
-    await analyticsService.syncFromMySQL();
-  } catch (err) {
-    console.error('Analytics initialization failed:', err.message);
-  }
+    // Initialize Analytics
+    try {
+      await analyticsService.syncFromMySQL();
+    } catch (err) {
+      console.error('Analytics initialization failed:', err.message);
+    }
+  }, 100);
 });
 
