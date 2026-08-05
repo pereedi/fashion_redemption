@@ -1,46 +1,40 @@
-import duckdb from 'duckdb';
 import db from '../config/db.js';
 import path from 'path';
 import fs from 'fs';
 import { logger } from '../utils/logger.js';
 
-let duck = null;
-try {
-  const dataDir = path.join(process.cwd(), 'data');
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-  const dbPath = path.join(dataDir, 'analytics.duckdb');
-  duck = new duckdb.Database(dbPath);
-} catch (err) {
-  logger.error('Failed to initialize DuckDB analytics instance', { error: err.message });
-}
-
 class AnalyticsService {
   constructor() {
-    if (duck) {
-      try {
-        this.con = duck.connect();
-        this.init();
-      } catch (err) {
-        logger.error('DuckDB connect failed', { error: err.message });
+    this.con = null;
+    this.init();
+  }
+
+  async init() {
+    try {
+      const duckdbModule = await import('duckdb');
+      const duckdb = duckdbModule.default || duckdbModule;
+      const dataDir = path.join(process.cwd(), 'data');
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
       }
+      const dbPath = path.join(dataDir, 'analytics.duckdb');
+      const duck = new duckdb.Database(dbPath);
+      this.con = duck.connect();
+      this.con.run(`
+        CREATE TABLE IF NOT EXISTS sales_data (
+          order_id INTEGER,
+          category VARCHAR,
+          total DECIMAL(18,2),
+          created_at TIMESTAMP
+        )
+      `);
+    } catch (err) {
+      logger.info('DuckDB not installed or unavailable. Analytics operating in fallback mode.');
     }
   }
 
-  init() {
-    if (!this.con) return;
-    this.con.run(`
-      CREATE TABLE IF NOT EXISTS sales_data (
-        order_id INTEGER,
-        category VARCHAR,
-        total DECIMAL(18,2),
-        created_at TIMESTAMP
-      )
-    `);
-  }
-
   async syncFromMySQL() {
+    if (!this.con) return;
     try {
       logger.info('Starting Analytics Sync (MySQL -> DuckDB)...');
       
@@ -49,7 +43,6 @@ class AnalyticsService {
         .join('order_items', 'orders.id', 'order_items.order_id')
         .join('products', 'order_items.product_id', 'products.id');
 
-      // Clear existing duckdb data
       this.con.run('DELETE FROM sales_data');
 
       const stmt = this.con.prepare('INSERT INTO sales_data VALUES (?, ?, ?, ?)');
@@ -66,6 +59,9 @@ class AnalyticsService {
   }
 
   async getSalesReport(timeframe = 'daily') {
+    if (!this.con) {
+      return [];
+    }
     let groupBy = "strftime('%Y-%m-%d', created_at)";
     let orderBy = "1 ASC";
 
@@ -91,6 +87,9 @@ class AnalyticsService {
   }
 
   async getCategoryReport() {
+    if (!this.con) {
+      return [];
+    }
     return new Promise((resolve, reject) => {
       this.con.all('SELECT category, SUM(total) as revenue, COUNT(DISTINCT order_id) as orders FROM sales_data GROUP BY 1 ORDER BY 2 DESC', (err, res) => {
         if (err) reject(err);
