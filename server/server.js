@@ -24,6 +24,15 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
+// Global process error handlers to prevent Passenger 500 crashes
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.stack || err.message || err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION at:', promise, 'reason:', reason);
+});
+
 const app = express();
 app.set('trust proxy', 1); // required for correct IP detection behind Render proxy
 const PORT = process.env.PORT || 5000;
