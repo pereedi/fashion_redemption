@@ -93,6 +93,34 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Fashion Redemption Server is running' });
 });
 
+// DB Diagnostic — remove this after fixing MySQL
+app.get('/db-test', async (req, res) => {
+  const config = {
+    host: process.env.MYSQL_HOST || '(not set)',
+    port: process.env.MYSQL_PORT || '(not set)',
+    user: process.env.MYSQL_USER || '(not set)',
+    database: process.env.MYSQL_DATABASE || '(not set)',
+    NODE_ENV: process.env.NODE_ENV || '(not set)',
+    passwordSet: !!process.env.MYSQL_PASSWORD,
+    passwordLength: (process.env.MYSQL_PASSWORD || '').length
+  };
+  try {
+    await db.raw('SELECT 1');
+    res.json({ status: 'MySQL connected OK', config });
+  } catch (err) {
+    res.status(500).json({
+      status: 'MySQL connection FAILED',
+      error: {
+        message: err.message,
+        code: err.code,
+        errno: err.errno,
+        sqlState: err.sqlState
+      },
+      config
+    });
+  }
+});
+
 // API Documentation Route
 app.get('/docs', (req, res) => {
   try {
