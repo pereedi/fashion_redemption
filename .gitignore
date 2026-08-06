@@ -2,7 +2,7 @@
 node_modules/
 
 # Build output
-dist/
+# dist/ is committed so cPanel can pull the built frontend via Git
 dist-ssr/
 
 # Environment variables
