@@ -49,11 +49,10 @@ app.use(express.urlencoded({ limit: '250mb', extended: true }));
 // Added after middleware block
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
-// Serve static frontend build if dist directory exists
+// Serve static frontend build
+// Always register static middleware; if dist doesn't exist yet it passes through harmlessly
 const distPath = path.join(__dirname, '../dist');
-if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
-}
+app.use(express.static(distPath, { index: 'index.html' }));
 
 // Request Logger
 app.use((req, res, next) => {
@@ -161,8 +160,8 @@ app.post('/api/seed-products', async (req, res) => {
 });
 
 // SPA Catch-all fallback for client-side routing
-// NOTE: Express 5 requires '/*splat' instead of '(.*)'
-app.get('/*splat', (req, res, next) => {
+// Express 5: '/*splat' does NOT match bare '/' so we register both explicitly.
+const spaHandler = (req, res, next) => {
   if (req.path.startsWith('/api') || req.path === '/health' || req.path === '/docs' || req.path.startsWith('/images')) {
     return next();
   }
@@ -170,8 +169,12 @@ app.get('/*splat', (req, res, next) => {
   if (fs.existsSync(indexPath)) {
     return res.sendFile(indexPath);
   }
-  res.status(200).send('<!DOCTYPE html><html><head><title>Fashion Redemption</title></head><body><h1>Fashion Redemption Server is running</h1><p>Frontend dist directory pending upload.</p></body></html>');
-});
+  // dist not uploaded yet — show a holding page instead of 404
+  res.status(200).send('<!DOCTYPE html><html><head><title>Fashion Redemption</title></head><body><h1>Fashion Redemption Server is running</h1><p>Frontend build pending upload.</p></body></html>');
+};
+
+app.get('/', spaHandler);
+app.get('/*splat', spaHandler);
 
 // Start Server
 app.listen(PORT, async () => {
