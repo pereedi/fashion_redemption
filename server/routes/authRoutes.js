@@ -360,7 +360,7 @@ const handleKingsChatRedirect = (req, res) => {
     const code = req.query.code || req.body?.code;
     const origin = req.query.origin || req.body?.origin;
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://fashionredemption.com';
 
     if (!code) {
       const errorParam = req.query.error || 'no_code';
@@ -380,7 +380,7 @@ const handleKingsChatRedirect = (req, res) => {
     res.redirect(`${callbackBase}${separator}code=${encodeURIComponent(code)}`);
   } catch (err) {
     console.error('KingsChat redirect route error:', err);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://fashionredemption.com';
     res.redirect(`${frontendUrl}/kingschat-callback?error=${encodeURIComponent(err.message)}`);
   }
 };
