@@ -72,18 +72,14 @@ const KingsChatButton: React.FC<KingsChatButtonProps> = ({
 
     // Registered redirect URL in KingsChat developer portal:
     // https://fashionredemption.com/api/auth/kingschat/redirect
-    const redirectUri = `${window.location.origin}/api/auth/kingschat/redirect`;
     const frontendCallbackUrl = `${window.location.origin}/kingschat-callback`;
 
-    // Build the OAuth2 authorization URL
-    // Note: KingsChat expects accounts.kingsch.at with client_id and redirect_uri parameters.
+    // Build the KingsChat OAuth2 authorization URL
+    // KingsChat's Next.js auth portal expects accounts.kingschat.online/log-in with clientId and origin
     const loginUrl =
-      `https://accounts.kingsch.at` +
-      `?client_id=${encodeURIComponent(clientId)}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&state=${encodeURIComponent(frontendCallbackUrl)}` +
-      `&response_type=code` +
-      `&scopes=${encodeURIComponent('[]')}`;
+      `https://accounts.kingschat.online/log-in` +
+      `?clientId=${encodeURIComponent(clientId)}` +
+      `&origin=${encodeURIComponent(frontendCallbackUrl)}`;
 
     // Open a centered popup
     const width = 520;
