@@ -38,7 +38,7 @@ export const apiKeyAuth = (req, res, next) => {
 
   // ← ADD: log successful external calls for monitoring
   const origin = req.headers['origin'] || 'direct';
-  if (!['https://fashion-redemption.vercel.app', 'http://localhost:5173'].includes(origin)) {
+  if (!['https://fashionredemption.com', 'https://www.fashionredemption.com', 'https://fashion-redemption.vercel.app', 'http://localhost:5173'].includes(origin)) {
     logger.info(`External API access — ${req.method} ${req.path} from ${origin}`);
   }
 

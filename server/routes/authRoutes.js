@@ -358,7 +358,7 @@ const handleKingsChatRedirect = (req, res) => {
   try {
     // GET: code is in query string. POST: code is in request body.
     const code = req.query.code || req.body?.code;
-    const origin = req.query.origin || req.body?.origin;
+    const origin = req.query.origin || req.body?.origin || req.query.state || req.body?.state;
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://fashionredemption.com';
 
