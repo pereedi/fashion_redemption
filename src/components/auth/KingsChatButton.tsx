@@ -70,17 +70,13 @@ const KingsChatButton: React.FC<KingsChatButtonProps> = ({
 
     setIsLoading(true);
 
-    // Approved redirect URL in KingsChat developer portal:
-    // https://fashionredemption.com/api/auth/kingschat/redirect
-    const approvedRedirectUrl = `${window.location.origin}/api/auth/kingschat/redirect`;
-
-    // Build the official KingsChat OAuth2 authorization URL
+    // The redirect_url that receives the code is whatever is registered
+    // for this app in the KingsChat developer portal (Step 1) — it is NOT
+    // passed as a login parameter. We only pass clientId and, optionally,
+    // origin (arbitrary state echoed back verbatim in the callback POST).
     const loginUrl =
-      `https://connect.kingsch.at/developer/oauth/authorize` +
-      `?client_id=${encodeURIComponent(clientId)}` +
-      `&response_type=code` +
-      `&redirect_uri=${encodeURIComponent(approvedRedirectUrl)}` +
-      `&scope=user_info`;
+      `https://accounts.kingschat.online/log-in` +
+      `?clientId=${encodeURIComponent(clientId)}`;
 
     // Open a centered popup
     const width = 520;
