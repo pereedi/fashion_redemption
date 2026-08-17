@@ -20,7 +20,8 @@ export const apiKeyAuth = (req, res, next) => {
     req.path.startsWith('/images') ||
     req.originalUrl.startsWith('/api/images') ||
     // KingsChat OAuth redirect — their server POSTs here without our API key
-    req.path === '/auth/kingschat/redirect'
+    req.path === '/auth/kingschat/redirect' ||
+    req.originalUrl.includes('/kingschat/redirect')
   ) {
     return next();
   }
