@@ -21,7 +21,7 @@ const Hero: React.FC = () => {
     }, [images.length]);
 
     return (
-        <section className="relative h-[90vh] w-full overflow-hidden bg-black">
+        <section className="relative h-[60vh] w-full overflow-hidden bg-black">
             {/* Background Image Carousel */}
             <AnimatePresence mode="wait">
                 <motion.img

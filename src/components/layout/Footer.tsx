@@ -64,11 +64,11 @@ const Footer: React.FC = () => {
                         <ul className="space-y-4 text-sm text-black/60">
                             <li className="flex flex-col">
                                 <span className="text-black/30 font-bold text-[10px]">ADDRESS</span>
-                                124 Redemption Blvd, 2010 Miami, FL 33101
+                                Asese, Pinnacle Mall, Nigeria
                             </li>
                             <li className="flex flex-col">
                                 <span className="text-black/30 font-bold text-[10px]">EMAIL</span>
-                                studio@fashionredemption.com
+                                info @fashionredemption.com
                             </li>
                             <li className="flex flex-col">
                                 <span className="text-black/30 font-bold text-[10px]">PHONE</span>
@@ -81,7 +81,7 @@ const Footer: React.FC = () => {
                 {/* Bottom Row */}
                 <div className="pt-10 border-t border-light-gray flex flex-col md:flex-row justify-between items-center gap-6">
                     <p className="text-[10px] text-black/40 font-bold tracking-widest">
-                        © 2024 FASHION REDEMPTION. ALL RIGHTS RESERVED.
+                        © 2026 FASHION REDEMPTION. ALL RIGHTS RESERVED.
                     </p>
                     <div className="flex gap-8 text-[10px] text-black/40 font-bold tracking-widest uppercase">
                         <a href="#" className="hover:text-black">Privacy Policy</a>
