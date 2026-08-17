@@ -15,6 +15,7 @@ export const apiKeyAuth = (req, res, next) => {
   if (
     req.method === 'OPTIONS' ||
     req.path === '/health' ||
+    req.path === '/db-test' ||
     req.path.startsWith('/docs') ||
     req.path.startsWith('/images') ||
     req.originalUrl.startsWith('/api/images') ||

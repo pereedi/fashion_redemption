@@ -94,7 +94,7 @@ app.get('/health', (req, res) => {
 });
 
 // DB Diagnostic — remove this after fixing MySQL
-app.get('/db-test', async (req, res) => {
+const dbTestHandler = async (req, res) => {
   const config = {
     host: process.env.MYSQL_HOST || '(not set)',
     port: process.env.MYSQL_PORT || '(not set)',
@@ -119,7 +119,9 @@ app.get('/db-test', async (req, res) => {
       config
     });
   }
-});
+};
+app.get('/db-test', dbTestHandler);
+app.get('/api/db-test', dbTestHandler);
 
 // API Documentation Route
 app.get('/docs', (req, res) => {
