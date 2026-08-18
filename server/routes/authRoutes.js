@@ -353,8 +353,10 @@ router.post('/kingschat', async (req, res) => {
 
 // In-memory store for pending KingsChat OAuth login sessions keyed by state/origin
 const pendingKingsChatLogins = new Map();
+// Cache processed authorization codes to prevent duplicate token exchange (422 invalid code error)
+const processedKingsChatCodes = new Map();
 
-// Expire pending logins after 10 minutes
+// Expire pending logins and processed codes after 10 minutes
 const cleanupPendingLogins = () => {
   const now = Date.now();
   for (const [key, value] of pendingKingsChatLogins.entries()) {
@@ -362,119 +364,147 @@ const cleanupPendingLogins = () => {
       pendingKingsChatLogins.delete(key);
     }
   }
+  for (const [key, value] of processedKingsChatCodes.entries()) {
+    if (now - (value.timestamp || 0) > 10 * 60 * 1000) {
+      processedKingsChatCodes.delete(key);
+    }
+  }
 };
 setInterval(cleanupPendingLogins, 5 * 60 * 1000);
 
 /**
  * Exchanges authorization code for tokens, fetches user profile,
- * and upserts user into the database.
+ * and upserts user into the database with deduplication.
  */
 async function processKingsChatAuthCode(code) {
-  const clientId = process.env.KINGSCHAT_CLIENT_ID || process.env.VITE_KINGSCHAT_CLIENT_ID;
+  let cleanCode = String(code).trim();
+  const clientId = (process.env.KINGSCHAT_CLIENT_ID || process.env.VITE_KINGSCHAT_CLIENT_ID || '').trim();
   if (!clientId) {
     throw new Error('KingsChat client_id is not configured on the server (KINGSCHAT_CLIENT_ID)');
   }
 
-  // Step 1: Exchange authorization code for access_token & refresh_token
-  console.log('KingsChat OAuth: Exchanging authorization code for token...');
-  const tokenResponse = await fetch('https://connect.kingsch.at/developer/api/oauth2/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      grant_type: 'code',
-      client_id: clientId,
-      code
-    })
-  });
-
-  if (!tokenResponse.ok) {
-    const errBody = await tokenResponse.text();
-    console.error('KingsChat token exchange failed:', tokenResponse.status, errBody);
-    throw new Error(`KingsChat token exchange failed (${tokenResponse.status}): ${errBody}`);
-  }
-
-  const tokenData = await tokenResponse.json();
-  const accessToken = tokenData.access_token;
-
-  if (!accessToken) {
-    console.error('KingsChat token response missing access_token:', tokenData);
-    throw new Error('KingsChat did not return an access token');
-  }
-
-  // Step 2: Fetch user profile using the access_token
-  console.log('KingsChat OAuth: Fetching user profile...');
-  const profileResponse = await fetch('https://connect.kingsch.at/developer/api/user/profile', {
-    headers: {
-      'api-key': process.env.KINGSCHAT_API_KEY,
-      'Authorization': `Bearer ${accessToken}`
+  // If this code was already processed or is currently in flight, return the cached result / promise
+  if (processedKingsChatCodes.has(cleanCode)) {
+    const existing = processedKingsChatCodes.get(cleanCode);
+    if (existing.promise) {
+      return await existing.promise;
     }
-  });
-
-  let kingsChatUser = null;
-  if (profileResponse.ok) {
-    const profileData = await profileResponse.json();
-    kingsChatUser = profileData.profile || profileData.user || profileData.data || profileData;
-  } else {
-    const errText = await profileResponse.text();
-    console.error('KingsChat profile fetch failed:', profileResponse.status, errText);
-    throw new Error(`Failed to retrieve KingsChat user profile: ${errText}`);
-  }
-
-  // Normalize the user fields across different API response shapes
-  const kingsChatId = String(
-    kingsChatUser.id || kingsChatUser.user_id || kingsChatUser.userId || `kc_${Date.now()}`
-  );
-  const name = kingsChatUser.name || kingsChatUser.username || `KingsChat User`;
-  const email =
-    kingsChatUser.email ||
-    (kingsChatUser.username ? `${kingsChatUser.username}@kingschat.user` : `${kingsChatId}@kingschat.user`);
-
-  console.log('KingsChat OAuth: User authenticated:', { kingsChatId, name, email });
-
-  // Step 3: Upsert user in our database (find by KingsChat ID → email → create)
-  let user = await UserRepository.findByKingsChatId(kingsChatId);
-
-  if (!user && email) {
-    user = await UserRepository.findByEmail(email);
-    if (user && !user.kingschat_id) {
-      await UserRepository.update(user.id, { kingschat_id: kingsChatId });
-      user.kingschat_id = kingsChatId;
+    if (existing.result) {
+      return existing.result;
     }
   }
 
-  if (!user) {
-    const userId = await UserRepository.create({
-      name,
-      email,
-      kingschat_id: kingsChatId,
-      password: null,
-      role: 'customer'
+  const exchangePromise = (async () => {
+    // Step 1: Exchange authorization code for access_token & refresh_token
+    console.log('KingsChat OAuth: Exchanging authorization code for token... client_id:', clientId);
+    const tokenResponse = await fetch('https://connect.kingsch.at/developer/api/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        grant_type: 'code',
+        client_id: clientId,
+        code: cleanCode
+      })
     });
-    user = await UserRepository.findById(userId);
-  } else {
-    user = await UserRepository.findById(user.id);
-  }
 
-  if (!user) {
-    throw new Error('Failed to create or retrieve user account');
-  }
-
-  const token = signToken(user.id);
-
-  return {
-    token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      kingschat_id: user.kingschat_id,
-      address: user.address,
-      city: user.city,
-      postalCode: user.postal_code,
-      wishlist: user.wishlist || []
+    if (!tokenResponse.ok) {
+      const errBody = await tokenResponse.text();
+      console.error('KingsChat token exchange failed:', tokenResponse.status, errBody);
+      throw new Error(`KingsChat token exchange failed (${tokenResponse.status}): ${errBody}`);
     }
-  };
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+
+    if (!accessToken) {
+      console.error('KingsChat token response missing access_token:', tokenData);
+      throw new Error('KingsChat did not return an access token');
+    }
+
+    // Step 2: Fetch user profile using the access_token
+    console.log('KingsChat OAuth: Fetching user profile...');
+    const profileResponse = await fetch('https://connect.kingsch.at/developer/api/user/profile', {
+      headers: {
+        'api-key': (process.env.KINGSCHAT_API_KEY || '').trim(),
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    let kingsChatUser = null;
+    if (profileResponse.ok) {
+      const profileData = await profileResponse.json();
+      kingsChatUser = profileData.profile || profileData.user || profileData.data || profileData;
+    } else {
+      const errText = await profileResponse.text();
+      console.error('KingsChat profile fetch failed:', profileResponse.status, errText);
+      throw new Error(`Failed to retrieve KingsChat user profile: ${errText}`);
+    }
+
+    // Normalize the user fields across different API response shapes
+    const kingsChatId = String(
+      kingsChatUser.id || kingsChatUser.user_id || kingsChatUser.userId || `kc_${Date.now()}`
+    );
+    const name = kingsChatUser.name || kingsChatUser.username || `KingsChat User`;
+    const email =
+      kingsChatUser.email ||
+      (kingsChatUser.username ? `${kingsChatUser.username}@kingschat.user` : `${kingsChatId}@kingschat.user`);
+
+    console.log('KingsChat OAuth: User authenticated:', { kingsChatId, name, email });
+
+    // Step 3: Upsert user in our database (find by KingsChat ID → email → create)
+    let user = await UserRepository.findByKingsChatId(kingsChatId);
+
+    if (!user && email) {
+      user = await UserRepository.findByEmail(email);
+      if (user && !user.kingschat_id) {
+        await UserRepository.update(user.id, { kingschat_id: kingsChatId });
+        user.kingschat_id = kingsChatId;
+      }
+    }
+
+    if (!user) {
+      const userId = await UserRepository.create({
+        name,
+        email,
+        kingschat_id: kingsChatId,
+        password: null,
+        role: 'customer'
+      });
+      user = await UserRepository.findById(userId);
+    } else {
+      user = await UserRepository.findById(user.id);
+    }
+
+    if (!user) {
+      throw new Error('Failed to create or retrieve user account');
+    }
+
+    const token = signToken(user.id);
+
+    const result = {
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        kingschat_id: user.kingschat_id,
+        address: user.address,
+        city: user.city,
+        postalCode: user.postal_code,
+        wishlist: user.wishlist || []
+      }
+    };
+
+    processedKingsChatCodes.set(cleanCode, { result, timestamp: Date.now() });
+    return result;
+  })();
+
+  processedKingsChatCodes.set(cleanCode, { promise: exchangePromise, timestamp: Date.now() });
+  return await exchangePromise;
 }
 
 // GET/POST /api/auth/kingschat/redirect
