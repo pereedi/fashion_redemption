@@ -351,165 +351,286 @@ router.post('/kingschat', async (req, res) => {
   }
 });
 
-// GET /api/auth/kingschat/redirect  (browser redirect — KingsChat navigates popup here)
-// POST /api/auth/kingschat/redirect (server POST — KingsChat docs say POST, but browser uses GET)
-// Both are handled identically: extract the code and redirect the popup to our frontend callback page.
-const handleKingsChatRedirect = (req, res) => {
+// In-memory store for pending KingsChat OAuth login sessions keyed by state/origin
+const pendingKingsChatLogins = new Map();
+
+// Expire pending logins after 10 minutes
+const cleanupPendingLogins = () => {
+  const now = Date.now();
+  for (const [key, value] of pendingKingsChatLogins.entries()) {
+    if (now - (value.timestamp || 0) > 10 * 60 * 1000) {
+      pendingKingsChatLogins.delete(key);
+    }
+  }
+};
+setInterval(cleanupPendingLogins, 5 * 60 * 1000);
+
+/**
+ * Exchanges authorization code for tokens, fetches user profile,
+ * and upserts user into the database.
+ */
+async function processKingsChatAuthCode(code) {
+  const clientId = process.env.KINGSCHAT_CLIENT_ID || process.env.VITE_KINGSCHAT_CLIENT_ID;
+  if (!clientId) {
+    throw new Error('KingsChat client_id is not configured on the server (KINGSCHAT_CLIENT_ID)');
+  }
+
+  // Step 1: Exchange authorization code for access_token & refresh_token
+  console.log('KingsChat OAuth: Exchanging authorization code for token...');
+  const tokenResponse = await fetch('https://connect.kingsch.at/developer/api/oauth2/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grant_type: 'code',
+      client_id: clientId,
+      code
+    })
+  });
+
+  if (!tokenResponse.ok) {
+    const errBody = await tokenResponse.text();
+    console.error('KingsChat token exchange failed:', tokenResponse.status, errBody);
+    throw new Error(`KingsChat token exchange failed (${tokenResponse.status}): ${errBody}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  const accessToken = tokenData.access_token;
+
+  if (!accessToken) {
+    console.error('KingsChat token response missing access_token:', tokenData);
+    throw new Error('KingsChat did not return an access token');
+  }
+
+  // Step 2: Fetch user profile using the access_token
+  console.log('KingsChat OAuth: Fetching user profile...');
+  const profileResponse = await fetch('https://connect.kingsch.at/developer/api/user/profile', {
+    headers: {
+      'api-key': process.env.KINGSCHAT_API_KEY,
+      'Authorization': `Bearer ${accessToken}`
+    }
+  });
+
+  let kingsChatUser = null;
+  if (profileResponse.ok) {
+    const profileData = await profileResponse.json();
+    kingsChatUser = profileData.profile || profileData.user || profileData.data || profileData;
+  } else {
+    const errText = await profileResponse.text();
+    console.error('KingsChat profile fetch failed:', profileResponse.status, errText);
+    throw new Error(`Failed to retrieve KingsChat user profile: ${errText}`);
+  }
+
+  // Normalize the user fields across different API response shapes
+  const kingsChatId = String(
+    kingsChatUser.id || kingsChatUser.user_id || kingsChatUser.userId || `kc_${Date.now()}`
+  );
+  const name = kingsChatUser.name || kingsChatUser.username || `KingsChat User`;
+  const email =
+    kingsChatUser.email ||
+    (kingsChatUser.username ? `${kingsChatUser.username}@kingschat.user` : `${kingsChatId}@kingschat.user`);
+
+  console.log('KingsChat OAuth: User authenticated:', { kingsChatId, name, email });
+
+  // Step 3: Upsert user in our database (find by KingsChat ID → email → create)
+  let user = await UserRepository.findByKingsChatId(kingsChatId);
+
+  if (!user && email) {
+    user = await UserRepository.findByEmail(email);
+    if (user && !user.kingschat_id) {
+      await UserRepository.update(user.id, { kingschat_id: kingsChatId });
+      user.kingschat_id = kingsChatId;
+    }
+  }
+
+  if (!user) {
+    const userId = await UserRepository.create({
+      name,
+      email,
+      kingschat_id: kingsChatId,
+      password: null,
+      role: 'customer'
+    });
+    user = await UserRepository.findById(userId);
+  } else {
+    user = await UserRepository.findById(user.id);
+  }
+
+  if (!user) {
+    throw new Error('Failed to create or retrieve user account');
+  }
+
+  const token = signToken(user.id);
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      kingschat_id: user.kingschat_id,
+      address: user.address,
+      city: user.city,
+      postalCode: user.postal_code,
+      wishlist: user.wishlist || []
+    }
+  };
+}
+
+// GET/POST /api/auth/kingschat/redirect
+// Handles KingsChat callback (webhook POST from KingsChat server or GET redirect from browser)
+const handleKingsChatRedirect = async (req, res) => {
+  const origin = req.query.origin || req.body?.origin || req.query.state || req.body?.state;
+  const code = req.query.code || req.body?.code;
+  const errorParam = req.query.error || req.body?.error;
+
+  console.log(`KingsChat redirect (${req.method}): code=${code ? 'present' : 'none'}, origin=${origin || 'none'}`);
+
   try {
-    // GET: code is in query string. POST: code is in request body.
-    const code = req.query.code || req.body?.code;
-    const origin = req.query.origin || req.body?.origin || req.query.state || req.body?.state;
+    if (errorParam || !code) {
+      const errMsg = errorParam || 'No authorization code received from KingsChat';
+      if (origin) {
+        pendingKingsChatLogins.set(origin, {
+          status: 'error',
+          message: errMsg,
+          timestamp: Date.now()
+        });
+      }
 
-    const frontendUrl = process.env.FRONTEND_URL || 'https://fashionredemption.com';
+      if (req.method === 'POST') {
+        return res.status(200).json({ status: 'error', message: errMsg });
+      }
 
-    if (!code) {
-      const errorParam = req.query.error || 'no_code';
-      console.error('KingsChat redirect received no code. Error:', errorParam);
-      return res.redirect(`${frontendUrl}/kingschat-callback?error=${encodeURIComponent(errorParam)}`);
+      const frontendUrl = process.env.FRONTEND_URL || 'https://fashionredemption.com';
+      return res.redirect(`${frontendUrl}/kingschat-callback?error=${encodeURIComponent(errMsg)}`);
     }
 
-    console.log(`KingsChat redirect (${req.method}): received code, redirecting popup to frontend callback...`);
+    // Process code -> access token -> profile -> user & JWT
+    const result = await processKingsChatAuthCode(code);
 
-    // `origin` will contain our frontend callback URL if we passed it in Step 4.
-    // Fall back to FRONTEND_URL/kingschat-callback if not provided.
-    const callbackBase = (origin && origin.startsWith('http'))
-      ? origin
-      : `${frontendUrl}/kingschat-callback`;
+    if (origin) {
+      pendingKingsChatLogins.set(origin, {
+        status: 'success',
+        token: result.token,
+        user: result.user,
+        timestamp: Date.now()
+      });
+    }
 
-    const separator = callbackBase.includes('?') ? '&' : '?';
-    res.redirect(`${callbackBase}${separator}code=${encodeURIComponent(code)}`);
+    // If request is from browser popup (GET or HTML requested), render self-closing popup handler
+    const isBrowserNavigation = req.method === 'GET' || req.headers.accept?.includes('text/html');
+
+    if (isBrowserNavigation) {
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>KingsChat Login</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f9f9f9; }
+            .card { text-align: center; background: white; padding: 2.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+            h2 { color: #2B82C9; margin-bottom: 0.5rem; font-size: 1.25rem; }
+            p { color: #666; font-size: 0.875rem; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h2>Login Successful</h2>
+            <p>Closing window and returning to application...</p>
+          </div>
+          <script>
+            try {
+              if (window.opener) {
+                window.opener.postMessage({
+                  type: 'KINGSCHAT_AUTH_SUCCESS',
+                  token: ${JSON.stringify(result.token)},
+                  user: ${JSON.stringify(result.user)}
+                }, '*');
+              }
+            } catch (e) {
+              console.error(e);
+            }
+            setTimeout(function() {
+              window.close();
+            }, 600);
+          </script>
+        </body>
+        </html>
+      `);
+    }
+
+    // KingsChat server-to-server POST: respond with 200 OK
+    return res.status(200).json({
+      status: 'ok',
+      message: 'KingsChat authorization processed successfully'
+    });
   } catch (err) {
-    console.error('KingsChat redirect route error:', err);
+    console.error('KingsChat redirect processing error:', err);
+    if (origin) {
+      pendingKingsChatLogins.set(origin, {
+        status: 'error',
+        message: err.message,
+        timestamp: Date.now()
+      });
+    }
+
+    if (req.method === 'POST') {
+      return res.status(200).json({ status: 'error', message: err.message });
+    }
+
     const frontendUrl = process.env.FRONTEND_URL || 'https://fashionredemption.com';
-    res.redirect(`${frontendUrl}/kingschat-callback?error=${encodeURIComponent(err.message)}`);
+    return res.redirect(`${frontendUrl}/kingschat-callback?error=${encodeURIComponent(err.message)}`);
   }
 };
 
 router.get('/kingschat/redirect', handleKingsChatRedirect);
 router.post('/kingschat/redirect', handleKingsChatRedirect);
 
+// GET /api/auth/kingschat/poll
+// Frontend polls this endpoint using the unique session state to retrieve the auth result
+router.get('/kingschat/poll', (req, res) => {
+  const state = req.query.state || req.query.origin;
+  if (!state) {
+    return res.status(400).json({ status: 'error', message: 'state parameter is required' });
+  }
+
+  const result = pendingKingsChatLogins.get(state);
+  if (!result) {
+    return res.json({ status: 'pending' });
+  }
+
+  if (result.status === 'error') {
+    pendingKingsChatLogins.delete(state);
+    return res.status(400).json({ status: 'error', message: result.message });
+  }
+
+  // Success: consume and return
+  pendingKingsChatLogins.delete(state);
+  return res.status(200).json({
+    status: 'success',
+    token: result.token,
+    data: {
+      user: result.user
+    }
+  });
+});
 
 // POST /api/auth/kingschat/callback
-// Receives the authorization code from the OAuth2 popup callback page,
-// exchanges it for an access_token, fetches the KingsChat user profile,
-// then upserts the user in our database and returns a JWT.
+// Fallback direct code exchange endpoint
 router.post('/kingschat/callback', async (req, res) => {
   try {
     const { code } = req.body;
-
     if (!code) {
       return res.status(400).json({ message: 'Authorization code is required' });
     }
 
-    const clientId = process.env.KINGSCHAT_CLIENT_ID || process.env.VITE_KINGSCHAT_CLIENT_ID;
-    if (!clientId) {
-      return res.status(500).json({ message: 'KingsChat client_id is not configured on the server (VITE_KINGSCHAT_CLIENT_ID)' });
-    }
-
-    // Step 1: Exchange authorization code for access_token
-    console.log('KingsChat OAuth: Exchanging authorization code for token...');
-    const tokenResponse = await fetch('https://connect.kingsch.at/developer/api/oauth2/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        grant_type: 'code',
-        client_id: clientId,
-        code
-      })
-    });
-
-    if (!tokenResponse.ok) {
-      const errBody = await tokenResponse.text();
-      console.error('KingsChat token exchange failed:', tokenResponse.status, errBody);
-      return res.status(400).json({
-        message: `KingsChat token exchange failed (${tokenResponse.status}). Make sure the authorization code has not expired and the client_id is correct.`
-      });
-    }
-
-    const tokenData = await tokenResponse.json();
-    const accessToken = tokenData.access_token;
-
-    if (!accessToken) {
-      console.error('KingsChat token response missing access_token:', tokenData);
-      return res.status(400).json({ message: 'KingsChat did not return an access token' });
-    }
-
-    // Step 2: Fetch user profile using the access_token
-    console.log('KingsChat OAuth: Fetching user profile...');
-    const profileResponse = await fetch('https://connect.kingsch.at/developer/api/user/profile', {
-  headers: {
-    'api-key': process.env.KINGSCHAT_API_KEY,
-    'Authorization': `Bearer ${accessToken}`
-  }
-});
-
-    let kingsChatUser = null;
-    if (profileResponse.ok) {
-      const profileData = await profileResponse.json();
-      // The profile might be nested under various keys depending on the API version
-      kingsChatUser = profileData.profile || profileData.user || profileData.data || profileData;
-    } else {
-      const errText = await profileResponse.text();
-      console.error('KingsChat profile fetch failed:', profileResponse.status, errText);
-      return res.status(400).json({ message: 'Failed to retrieve KingsChat user profile' });
-    }
-
-    // Normalize the user fields across different API response shapes
-    const kingsChatId = String(
-      kingsChatUser.id || kingsChatUser.user_id || kingsChatUser.userId || `kc_${Date.now()}`
-    );
-    const name = kingsChatUser.name || kingsChatUser.username || `KingsChat User`;
-    const email =
-      kingsChatUser.email ||
-      (kingsChatUser.username ? `${kingsChatUser.username}@kingschat.user` : `${kingsChatId}@kingschat.user`);
-
-    console.log('KingsChat OAuth: User authenticated:', { kingsChatId, name, email });
-
-    // Step 3: Upsert user in our database (find by KingsChat ID → email → create)
-    let user = await UserRepository.findByKingsChatId(kingsChatId);
-
-    if (!user && email) {
-      user = await UserRepository.findByEmail(email);
-      if (user && !user.kingschat_id) {
-        await UserRepository.update(user.id, { kingschat_id: kingsChatId });
-        user.kingschat_id = kingsChatId;
-      }
-    }
-
-    if (!user) {
-      const userId = await UserRepository.create({
-        name,
-        email,
-        kingschat_id: kingsChatId,
-        password: null,
-        role: 'customer'
-      });
-      user = await UserRepository.findById(userId);
-    } else {
-      user = await UserRepository.findById(user.id);
-    }
-
-    if (!user) {
-      return res.status(500).json({ message: 'Failed to create or retrieve user account' });
-    }
-
-    const token = signToken(user.id);
-
+    const result = await processKingsChatAuthCode(code);
     res.status(200).json({
       status: 'success',
-      token,
+      token: result.token,
       data: {
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          kingschat_id: user.kingschat_id,
-          address: user.address,
-          city: user.city,
-          postalCode: user.postal_code,
-          wishlist: user.wishlist || []
-        }
+        user: result.user
       }
     });
   } catch (err) {

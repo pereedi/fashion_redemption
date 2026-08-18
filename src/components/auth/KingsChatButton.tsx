@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import API_BASE_URL from '../../config/api';
 
 interface KingsChatButtonProps {
   onSuccess: (user: any, token: string) => void;
@@ -10,16 +11,11 @@ interface KingsChatButtonProps {
 /**
  * KingsChatButton
  *
- * Implements the proper KingsChat OAuth2 popup flow:
- *  1. Opens accounts.kingschat.online/log-in?clientId=... in a popup window.
- *  2. KingsChat redirects to our /kingschat-callback page (registered as redirect_url).
- *  3. That callback page exchanges the `code` for tokens via our backend and
- *     posts the result back here via window.postMessage.
- *  4. We call onSuccess/onError accordingly.
- *
- * No more direct SDK login — that approach caused 422 errors because
- * kingschat-web-sdk was attempting a legacy password-based login flow,
- * not the OAuth2 authorization code flow.
+ * Implements KingsChat OAuth2 flow per developer documentation:
+ *  1. Opens accounts.kingschat.online/log-in?clientId=...&origin=SESSION_STATE in a popup window.
+ *  2. KingsChat POSTs the authorization code to our server's registered redirect_url.
+ *  3. Server exchanges the code for tokens, retrieves user profile, and stores session.
+ *  4. Client polls /api/auth/kingschat/poll?state=... (and listens for postMessage) to complete login.
  */
 const KingsChatButton: React.FC<KingsChatButtonProps> = ({
   onSuccess,
@@ -70,13 +66,14 @@ const KingsChatButton: React.FC<KingsChatButtonProps> = ({
 
     setIsLoading(true);
 
-    // The redirect_url that receives the code is whatever is registered
-    // for this app in the KingsChat developer portal (Step 1) — it is NOT
-    // passed as a login parameter. We only pass clientId and, optionally,
-    // origin (arbitrary state echoed back verbatim in the callback POST).
+    // Generate a unique session state to correlate backend callback with this client session
+    const stateId = `kc_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+    // Build URL according to Step 4 of the KingsChat Developer Documentation
     const loginUrl =
       `https://accounts.kingschat.online/log-in` +
-      `?clientId=${encodeURIComponent(clientId)}`;
+      `?clientId=${encodeURIComponent(clientId)}` +
+      `&origin=${encodeURIComponent(stateId)}`;
 
     // Open a centered popup
     const width = 520;
@@ -103,34 +100,65 @@ const KingsChatButton: React.FC<KingsChatButtonProps> = ({
 
     popupRef.current = popup;
 
-    // Listen for the postMessage result from the callback page
+    const handleSuccess = (user: any, token: string) => {
+      cleanup();
+      try {
+        popupRef.current?.close();
+      } catch (e) {}
+      onSuccess(user, token);
+    };
+
+    const handleError = (errMsg: string) => {
+      cleanup();
+      try {
+        popupRef.current?.close();
+      } catch (e) {}
+      if (onError) onError(errMsg || 'KingsChat authentication failed');
+    };
+
+    // 1. Listen for postMessage result (in case browser directly redirects back)
     const messageHandler = (event: MessageEvent) => {
-      // Only accept messages from our own origin
-      if (event.origin !== window.location.origin) return;
-
       const { type, token, user, message: errMsg } = event.data || {};
-
       if (type === 'KINGSCHAT_AUTH_SUCCESS' && token && user) {
-        cleanup();
-        popupRef.current?.close();
-        onSuccess(user, token);
+        handleSuccess(user, token);
       } else if (type === 'KINGSCHAT_AUTH_ERROR') {
-        cleanup();
-        popupRef.current?.close();
-        if (onError) onError(errMsg || 'KingsChat authentication failed');
+        handleError(errMsg);
       }
     };
 
     listenerRef.current = messageHandler;
     window.addEventListener('message', messageHandler);
 
-    // Poll to detect if the user closed the popup without completing login
-    pollRef.current = setInterval(() => {
+    // 2. Poll server for auth completion (for KingsChat backend webhook POST flow)
+    const pollStartTime = Date.now();
+    pollRef.current = setInterval(async () => {
+      // Timeout after 3 minutes
+      if (Date.now() - pollStartTime > 180000) {
+        cleanup();
+        try { popupRef.current?.close(); } catch (e) {}
+        return;
+      }
+
+      // Check if popup was manually closed by user
       if (popupRef.current?.closed) {
         cleanup();
-        // Don't call onError here — user simply closed the popup
+        return;
       }
-    }, 500);
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/auth/kingschat/poll?state=${encodeURIComponent(stateId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === 'success' && data.token && data.data?.user) {
+            handleSuccess(data.data.user, data.token);
+          } else if (data.status === 'error') {
+            handleError(data.message);
+          }
+        }
+      } catch (err) {
+        // Continue polling on transient network glitches
+      }
+    }, 1200);
   };
 
   return (
